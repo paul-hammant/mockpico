@@ -25,7 +25,9 @@ package com.thoughtworks.mockpico;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.picocontainer.DefaultPicoContainer;
+import org.picocontainer.InjectionFactory;
 import org.picocontainer.MutablePicoContainer;
+import org.picocontainer.PicoContainer;
 import org.picocontainer.behaviors.Caching;
 import org.picocontainer.containers.EmptyPicoContainer;
 import org.picocontainer.injectors.CompositeInjection;
@@ -91,37 +93,58 @@ public class Mockpico {
     }
 
     public static InnerMockpico mockDeps(Object... extras) {
-        return new InnerMockpico(extras);
+        return mockDeps(makePicoContainer(), extras);
+    }
+
+    public static MutablePicoContainer makePicoContainer() {
+        return makePicoContainer(new EmptyPicoContainer());
+    }
+
+    public static MutablePicoContainer makePicoContainer(PicoContainer parent) {
+        return makePicoContainer(parent, CDI(), SDI());
+    }
+
+    public static MutablePicoContainer makePicoContainer(InjectionFactory... injectionFactories) {
+        return makePicoContainer(new EmptyPicoContainer(), injectionFactories);
+    }
+
+    public static MutablePicoContainer makePicoContainer(PicoContainer parent, InjectionFactory... injectionFactories) {
+        return new DefaultPicoContainer(new Caching().wrap(new CompositeInjection(injectionFactories)), new NullLifecycleStrategy(), parent, new MockitoComponentMonitor());
+    }
+
+    public static InnerMockpico mockDeps(MutablePicoContainer pico, Object... extras) {
+        return new InnerMockpico(pico, extras);
     }
 
     public static class InnerMockpico {
 
+        private final MutablePicoContainer pico;
         private final Object[] extras;
 
-        public InnerMockpico(Object... extras) {
+        public InnerMockpico(MutablePicoContainer pico, Object... extras) {
+            this.pico = pico;
             this.extras = extras;
         }
 
         public <T> T on(Class<T> type) {
-            MutablePicoContainer mpc = new DefaultPicoContainer(new Caching().wrap(new CompositeInjection(CDI(), SDI())), new NullLifecycleStrategy(), new EmptyPicoContainer(), new MockitoComponentMonitor());
             for (Object extra : extras) {
-                mpc.addComponent(extra);
+                pico.addComponent(extra);
             }
-            MutablePicoContainer picoContainer = mpc.addComponent(type);
-            return picoContainer.getComponent(type);
+            return pico.addComponent(type).getComponent(type);
         }
-
     }
 
     private static class MockitoComponentMonitor extends NullComponentMonitor {
         @Override
-        public Object noComponentFound(MutablePicoContainer container, Object classToMock) {
+        public Object noComponentFound(MutablePicoContainer pico, Object classToMock) {
             if (classToMock instanceof Class) {
-// TODO primatives
+// TODO primitives
 //                if (classToMock == Integer.class) {
 //                    return 0;
 //                }
-                return Mockito.mock((Class) classToMock);
+                Object mocked = Mockito.mock((Class) classToMock);
+                pico.addComponent(classToMock, mocked);
+                return mocked;
             }
             return null;
         }

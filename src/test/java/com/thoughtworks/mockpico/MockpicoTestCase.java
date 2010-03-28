@@ -21,8 +21,11 @@ package com.thoughtworks.mockpico;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import org.junit.Test;
 
+import org.junit.Test;
+import org.picocontainer.MutablePicoContainer;
+
+import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDeps;
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -78,6 +81,25 @@ public class MockpicoTestCase {
         assertSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
     }
 
+    @Test
+    public void testCanPopulateAPicoHandedIn() {
+        MutablePicoContainer pico = makePicoContainer();
+        BigCheese bc = mockDeps(pico).on(BigCheese.class);
+        assertNotNull(bc);
+        assertNotNull(bc.thing);
+        assertIsAMock(bc.thing);
+        assertSame(pico.getComponent(Thing.class), bc.thing);
+        assertNotSame(Thing.class, bc.thing.getClass());
+        assertNotNull(bc.anotherThing);
+        assertIsAMock(bc.anotherThing);
+        assertSame(pico.getComponent(AnotherThing.class), bc.anotherThing);
+        assertNotSame(AnotherThing.class, bc.anotherThing.getClass());
+        assertNotNull(bc.yetAnotherThing);
+        assertIsAMock(bc.yetAnotherThing);
+        assertSame(pico.getComponent(YetAnotherThing.class), bc.yetAnotherThing);
+        assertNotSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
+    }
+
 
     public static class BigCheese {
         private final AnotherThing anotherThing;
@@ -92,7 +114,6 @@ public class MockpicoTestCase {
         public void setQwertyAsdfgh(YetAnotherThing yetAnotherThing) {
             this.yetAnotherThing = yetAnotherThing;
         }
-
     }
 
 	public static class AnotherThing {
