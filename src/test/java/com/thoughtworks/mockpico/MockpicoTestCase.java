@@ -24,10 +24,15 @@ package com.thoughtworks.mockpico;
 
 import org.junit.Test;
 import org.picocontainer.MutablePicoContainer;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.inject.Inject;
 
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDeps;
+import static com.thoughtworks.mockpico.Mockpico.mockInjectees;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +55,7 @@ public class MockpicoTestCase {
     }
 
     private void assertIsAMock(Object obj) {
-        assertTrue(obj.getClass().getName().indexOf("EnhancerByMockitoWithCGLIB") >0);
+        assertTrue(obj.getClass().getName().indexOf("EnhancerByMockitoWithCGLIB") > 0);
     }
 
     @Test
@@ -100,11 +105,33 @@ public class MockpicoTestCase {
         assertNotSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
     }
 
+    @Test
+    public void testCanMockConstructorAndInjectees() {
+        BigCheese bc = mockInjectees().on(BigCheese.class);
+        assertNotNull(bc);
+        assertNotNull(bc.thing);
+        assertIsAMock(bc.thing);
+        assertNotSame(Thing.class, bc.thing.getClass());
+        assertNotNull(bc.anotherThing);
+        assertIsAMock(bc.anotherThing);
+        assertNotSame(AnotherThing.class, bc.anotherThing.getClass());
+        assertNull(bc.yetAnotherThing);
+        assertNotNull(bc.crackers);
+        assertIsAMock(bc.crackers);
+        assertNotSame(Thing.class, bc.crackers.getClass());
+        assertNotNull(bc.wine);
+        assertIsAMock(bc.wine);
+        assertNotSame(Thing.class, bc.wine.getClass());
+    }
+
+
 
     public static class BigCheese {
         private final AnotherThing anotherThing;
         private final Thing thing;
         private YetAnotherThing yetAnotherThing;
+        private Thing crackers;
+        private Thing wine;
 
         public BigCheese(AnotherThing anotherThing, Thing thing) {
             this.anotherThing = anotherThing;
@@ -114,20 +141,29 @@ public class MockpicoTestCase {
         public void setQwertyAsdfgh(YetAnotherThing yetAnotherThing) {
             this.yetAnotherThing = yetAnotherThing;
         }
+
+        @Inject
+        public void andCrackers(Thing thing) {
+            this.crackers = thing;
+        }
+
+        @Autowired
+        public void andWine(Thing thing) {
+            this.wine = thing;
+        }
     }
 
-	public static class AnotherThing {
-	}
+    public static class AnotherThing {
+    }
 
     public static class YetAnotherThing {
     }
 
-	public static class Thing {
-		public final AnotherThing anotherThing;
+    public static class Thing {
+        public final AnotherThing anotherThing;
 
         public Thing(AnotherThing anotherThing) {
-			this.anotherThing = anotherThing;
-		}
+            this.anotherThing = anotherThing;
+        }
     }
-
 }

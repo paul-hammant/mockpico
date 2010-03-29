@@ -30,6 +30,7 @@ import org.picocontainer.MutablePicoContainer;
 import org.picocontainer.PicoContainer;
 import org.picocontainer.behaviors.Caching;
 import org.picocontainer.containers.EmptyPicoContainer;
+import org.picocontainer.injectors.AnnotatedMethodInjection;
 import org.picocontainer.injectors.CompositeInjection;
 import org.picocontainer.lifecycle.NullLifecycleStrategy;
 import org.picocontainer.monitors.NullComponentMonitor;
@@ -96,6 +97,21 @@ public class Mockpico {
         return mockDeps(makePicoContainer(), extras);
     }
 
+    public static InnerMockpico mockDeps(MutablePicoContainer pico, Object... extras) {
+        return new InnerMockpico(pico, extras);
+    }
+
+    public static InnerMockpico mockInjectees(Object... extras) {
+        return mockInjectees(makePicoContainer(CDI(), 
+                new AnnotatedMethodInjection(org.picocontainer.annotations.Inject.class, false),
+                new AnnotatedMethodInjection(javax.inject.Inject.class, false),
+                new AnnotatedMethodInjection(org.springframework.beans.factory.annotation.Autowired.class, false)), extras);
+    }
+
+    public static InnerMockpico mockInjectees(MutablePicoContainer pico, Object... extras) {
+        return new InnerMockpico(pico, extras);
+    }
+
     public static MutablePicoContainer makePicoContainer() {
         return makePicoContainer(new EmptyPicoContainer());
     }
@@ -112,9 +128,6 @@ public class Mockpico {
         return new DefaultPicoContainer(new Caching().wrap(new CompositeInjection(injectionFactories)), new NullLifecycleStrategy(), parent, new MockitoComponentMonitor());
     }
 
-    public static InnerMockpico mockDeps(MutablePicoContainer pico, Object... extras) {
-        return new InnerMockpico(pico, extras);
-    }
 
     public static class InnerMockpico {
 
