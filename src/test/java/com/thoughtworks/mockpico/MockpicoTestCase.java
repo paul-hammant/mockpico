@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDeps;
 import static com.thoughtworks.mockpico.Mockpico.mockInjectees;
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertNotSame;
@@ -87,7 +88,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanPopulateAPicoHandedIn() {
+    public void testCanPopulateAPicoHandedInAndJournalInjections() {
         MutablePicoContainer pico = makePicoContainer();
         BigCheese bc = mockDeps(pico).on(BigCheese.class);
         assertNotNull(bc);
@@ -103,6 +104,15 @@ public class MockpicoTestCase {
         assertIsAMock(bc.yetAnotherThing);
         assertSame(pico.getComponent(YetAnotherThing.class), bc.yetAnotherThing);
         assertNotSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
+
+        String actual = pico.getComponent(Mockpico.Journal.class).toString()
+                .replace(""+System.identityHashCode(bc.anotherThing), "ONE")
+                .replace(""+System.identityHashCode(bc.thing), "TWO")
+                .replace(""+System.identityHashCode(bc.yetAnotherThing), "THREE");
+        assertEquals("Constructor being injected:\n" +
+                "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$AnotherThing, with: Mock for AnotherThing, hashCode: ONE\n" +
+                "  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$Thing, with: Mock for Thing, hashCode: TWO\n" +
+                "Method being injected: 'setQwertyAsdfgh' with: Mock for YetAnotherThing, hashCode: THREE\n", actual);
     }
 
     @Test

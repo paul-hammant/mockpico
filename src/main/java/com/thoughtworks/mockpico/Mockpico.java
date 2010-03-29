@@ -24,6 +24,7 @@ package com.thoughtworks.mockpico;
 
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
+import org.picocontainer.ComponentAdapter;
 import org.picocontainer.DefaultPicoContainer;
 import org.picocontainer.InjectionFactory;
 import org.picocontainer.MutablePicoContainer;
@@ -34,6 +35,9 @@ import org.picocontainer.injectors.AnnotatedMethodInjection;
 import org.picocontainer.injectors.CompositeInjection;
 import org.picocontainer.lifecycle.NullLifecycleStrategy;
 import org.picocontainer.monitors.NullComponentMonitor;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
 
 import static org.picocontainer.injectors.Injectors.CDI;
 import static org.picocontainer.injectors.Injectors.SDI;
@@ -140,6 +144,7 @@ public class Mockpico {
         }
 
         public <T> T on(Class<T> type) {
+            pico.addComponent(new Journal());
             for (Object extra : extras) {
                 pico.addComponent(extra);
             }
@@ -147,7 +152,35 @@ public class Mockpico {
         }
     }
 
+    public static class Journal {
+        private StringBuilder builder = new StringBuilder();
+        public void log(String line) {
+            builder.append(line).append("\n");
+        }
+        @Override
+        public String toString() {
+            return builder.toString();
+        }
+    }
+
     private static class MockitoComponentMonitor extends NullComponentMonitor {
+        @Override
+        public <T> void instantiated(PicoContainer pico, ComponentAdapter<T> componentAdapter, Constructor<T> constructor, Object instantiated, Object[] injected, long duration) {
+            Journal journal = pico.getComponent(Journal.class);
+            journal.log("Constructor being injected:");
+            super.instantiated(pico, componentAdapter, constructor, instantiated, injected, duration);
+            for (int i = 0; i < injected.length; i++) {
+                journal.log("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: " + injected[i].toString());
+            }
+        }
+
+        @Override
+        public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance, long duration, Object[] args, Object retVal) {
+            Journal journal = pico.getComponent(Journal.class);
+            super.invoked(pico, componentAdapter, member, instance, duration, args, retVal);
+            journal.log("Method being injected: '" + member.getName() + "' with: " + args[0]);
+        }
+
         @Override
         public Object noComponentFound(MutablePicoContainer pico, Object classToMock) {
             if (classToMock instanceof Class) {
@@ -155,7 +188,8 @@ public class Mockpico {
 //                if (classToMock == Integer.class) {
 //                    return 0;
 //                }
-                Object mocked = Mockito.mock((Class) classToMock);
+                Class toMock = (Class) classToMock;
+                Object mocked = Mockito.mock(toMock);
                 pico.addComponent(classToMock, mocked);
                 return mocked;
             }
