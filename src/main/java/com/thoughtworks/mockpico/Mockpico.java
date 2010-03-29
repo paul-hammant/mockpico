@@ -36,6 +36,7 @@ import org.picocontainer.injectors.CompositeInjection;
 import org.picocontainer.lifecycle.NullLifecycleStrategy;
 import org.picocontainer.monitors.NullComponentMonitor;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 
@@ -108,8 +109,26 @@ public class Mockpico {
     public static InnerMockpico mockInjectees(Object... extras) {
         return mockInjectees(makePicoContainer(CDI(), 
                 new AnnotatedMethodInjection(org.picocontainer.annotations.Inject.class, false),
-                new AnnotatedMethodInjection(javax.inject.Inject.class, false),
-                new AnnotatedMethodInjection(org.springframework.beans.factory.annotation.Autowired.class, false)), extras);
+                new AnnotatedMethodInjection(getAtInjectAnnotation(), false),
+                new AnnotatedMethodInjection(getAutowiredAnnotation(), false)), extras);
+    }
+
+    private static Class<? extends Annotation> getAtInjectAnnotation() {
+        try {
+            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("javax.inject.Inject");
+        } catch (ClassNotFoundException e) {
+            // JSR330 not in classpath.  No matter carry on without it.
+            return org.picocontainer.annotations.Inject.class;
+        }
+    }
+
+    private static Class<? extends Annotation> getAutowiredAnnotation() {
+        try {
+            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("org.springframework.beans.factory.annotation.Autowired");
+        } catch (ClassNotFoundException e) {
+            // JSR330 not in classpath.  No matter carry on without it.
+            return org.picocontainer.annotations.Inject.class;
+        }
     }
 
     public static InnerMockpico mockInjectees(MutablePicoContainer pico, Object... extras) {
@@ -172,6 +191,11 @@ public class Mockpico {
             for (int i = 0; i < injected.length; i++) {
                 journal.log("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: " + injected[i].toString());
             }
+        }
+
+        @Override
+        public <T> void instantiationFailed(PicoContainer container, ComponentAdapter<T> componentAdapter, Constructor<T> constructor, Exception e) {
+            super.instantiationFailed(container, componentAdapter, constructor, e);    
         }
 
         @Override
