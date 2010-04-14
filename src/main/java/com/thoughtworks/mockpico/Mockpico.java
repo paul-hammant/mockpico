@@ -47,8 +47,8 @@ public class Mockpico {
     public static final InjectionFactory JSR330_ATINJECT = injectionAnnotation(getInjectionAnnotation("javax.inject.Inject"));
     public static final InjectionFactory AUTOWIRED = injectionAnnotation(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
 
-    public static <T> InjecteesAndContainerToDo<T> mockDepsFor(Class<T> type) {
-        return new InjecteesAndContainerToDo<T>(type);
+    public static <T> ContainerToDo<T> mockDepsFor(Class<T> type) {
+        return new ContainerToDo<T>(type);
     }
 
     public static class MakeToDo<T> {
@@ -81,21 +81,17 @@ public class Mockpico {
         }
 
         public InjecteesToDo(Class<T> type) {
-            super(type, ctr(), new Object[0]);
+            super(type, makePicoContainer(CDI(), PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED), new Object[0]);
         }
 
         public MakeToDo<T> withInjectees(Object... injectees) {
             return new MakeToDo<T>(type, mutablePicoContainer, injectees);
         }
 
-        private static MutablePicoContainer ctr() {
-            return makePicoContainer(CDI(), PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED);
-        }
-
     }
 
-    public static class InjecteesAndContainerToDo<T> extends InjecteesToDo<T> {
-        public InjecteesAndContainerToDo(Class<T> type) {
+    public static class ContainerToDo<T> extends InjecteesToDo<T> {
+        public ContainerToDo(Class<T> type) {
             super(type);
         }
 
