@@ -1,7 +1,6 @@
 package com.thoughtworks.mockpico;
 /**
  * Copyright (c) 2010 ThoughtWorks
- * Portions Copyright (c) 2007 Mockito Committers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -109,6 +108,27 @@ public class MockpicoTestCase {
         assertSame(bc.anotherThing, bc.thing.anotherThing);
         assertNotNull(bc.anotherThing);
         assertSame(AnotherThing.class, bc.anotherThing.getClass());
+        assertNull(bc.yetAnotherThing);
+        assertNotNull(bc.crackers);
+        assertNotNull(bc.wine);
+    }
+    
+    @Test
+    public void testCanSupplyConstructorDepsOnly() {
+        AnotherThing anotherThing = new AnotherThing();
+        YetAnotherThing yetAnotherThing = new YetAnotherThing();
+        Thing thing = new Thing(anotherThing);
+
+        BigCheese bc = mockDepsFor(BigCheese.class).withInjectionTypes(CDI()).withInjectees(thing, anotherThing, yetAnotherThing).make();
+
+        assertNotNull(bc);
+        assertSame(thing, bc.thing);
+        assertSame(Thing.class, bc.thing.getClass());
+        assertSame(anotherThing, bc.anotherThing);
+        assertSame(AnotherThing.class, bc.anotherThing.getClass());
+        assertNull(bc.yetAnotherThing);
+        assertNull(bc.crackers);
+        assertNull(bc.wine);
     }
 
     @Test

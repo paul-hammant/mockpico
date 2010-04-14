@@ -1,6 +1,5 @@
 /**
  * Copyright (c) 2010 ThoughtWorks
- * Portions Copyright (c) 2007 Mockito Committers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -104,8 +103,12 @@ public class Mockpico {
             return new InjecteesToDo<T>(type, mutablePicoContainer, new Object[0]);
         }
 
+        public InjecteesToDo<T> withInjectionTypes(InjectionFactory... injectionFactories) {
+            return using(makePicoContainer(injectionFactories));
+        }
+
         public InjecteesToDo<T> withSetters() {
-            return new InjecteesToDo<T>(type, makePicoContainer(CDI(), SDI()), new Object[0]);
+            return using(makePicoContainer(CDI(), SDI()));
         }
     }
 
