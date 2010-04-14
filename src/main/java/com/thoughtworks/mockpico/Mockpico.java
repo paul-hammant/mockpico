@@ -44,8 +44,8 @@ import static org.picocontainer.injectors.Injectors.SDI;
 public class Mockpico {
 
     public static final InjectionFactory PICO_ATINJECT = injectionAnnotation(org.picocontainer.annotations.Inject.class);
-    public static final InjectionFactory JSR330_ATINJECT = injectionAnnotation(getAtInjectAnnotation());
-    public static final InjectionFactory AUTOWIRED = injectionAnnotation(getAutowiredAnnotation());
+    public static final InjectionFactory JSR330_ATINJECT = injectionAnnotation(getInjectionAnnotation("javax.inject.Inject"));
+    public static final InjectionFactory AUTOWIRED = injectionAnnotation(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
 
     public static <T> InjecteesAndContainerToDo<T> mockDepsFor(Class<T> type) {
         return new InjecteesAndContainerToDo<T>(type);
@@ -132,20 +132,11 @@ public class Mockpico {
         return new AnnotatedMethodInjection(annotation, false);
     }
 
-    private static Class<? extends Annotation> getAtInjectAnnotation() {
+    private static Class<? extends Annotation> getInjectionAnnotation(String className) {
         try {
-            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("javax.inject.Inject");
+            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass(className);
         } catch (ClassNotFoundException e) {
             // JSR330 or Spring not in classpath.  No matter carry on without it with a kludge:
-            return org.picocontainer.annotations.Inject.class;
-        }
-    }
-
-    private static Class<? extends Annotation> getAutowiredAnnotation() {
-        try {
-            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("org.springframework.beans.factory.annotation.Autowired");
-        } catch (ClassNotFoundException e) {
-            // JSR330 not in classpath.  No matter carry on without it.
             return org.picocontainer.annotations.Inject.class;
         }
     }
