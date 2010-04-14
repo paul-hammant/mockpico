@@ -34,8 +34,7 @@ import java.lang.annotation.Target;
 
 import static com.thoughtworks.mockpico.Mockpico.injectionAnnotation;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
-import static com.thoughtworks.mockpico.Mockpico.mockDeps;
-import static com.thoughtworks.mockpico.Mockpico.mockInjectees;
+import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -48,7 +47,8 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanMockConstructorAndSetterDeps() {
-        BigCheese bc = mockDeps().on(BigCheese.class);
+        BigCheese bc = mockDepsFor(BigCheese.class).withSetters().make();
+
         assertNotNull(bc);
         assertNotNull(bc.thing);
         assertIsAMock(bc.thing);
@@ -70,7 +70,9 @@ public class MockpicoTestCase {
         AnotherThing anotherThing = new AnotherThing();
         YetAnotherThing yetAnotherThing = new YetAnotherThing();
         Thing thing = new Thing(anotherThing);
-        BigCheese bc = mockDeps(thing, anotherThing, yetAnotherThing).on(BigCheese.class);
+
+        BigCheese bc = mockDepsFor(BigCheese.class).withSetters().withInjectees(thing, anotherThing, yetAnotherThing).make();
+
         assertNotNull(bc);
         assertSame(thing, bc.thing);
         assertSame(Thing.class, bc.thing.getClass());
@@ -82,7 +84,8 @@ public class MockpicoTestCase {
 
     @Test
     public void testPicoCanMakeAndCacheRealConstructorAndSetterDeps() {
-        BigCheese bc = mockDeps(Thing.class, AnotherThing.class, YetAnotherThing.class).on(BigCheese.class);
+        BigCheese bc = mockDepsFor(BigCheese.class).withSetters().withInjectees(Thing.class, AnotherThing.class, YetAnotherThing.class).make();
+
         assertNotNull(bc);
         assertNotNull(bc.thing);
         assertSame(Thing.class, bc.thing.getClass());
@@ -94,9 +97,26 @@ public class MockpicoTestCase {
     }
 
     @Test
+    public void testCanSkipSettersIfNotSpecified() {
+        AnotherThing anotherThing = new AnotherThing();
+        Thing thing = new Thing(anotherThing);
+
+        BigCheese bc = mockDepsFor(BigCheese.class).withInjectees(thing, anotherThing).make();
+
+        assertNotNull(bc);
+        assertNotNull(bc.thing);
+        assertSame(Thing.class, bc.thing.getClass());
+        assertSame(bc.anotherThing, bc.thing.anotherThing);
+        assertNotNull(bc.anotherThing);
+        assertSame(AnotherThing.class, bc.anotherThing.getClass());
+    }
+
+    @Test
     public void testCanPopulateAPicoHandedInAndJournalInjections() {
         MutablePicoContainer pico = makePicoContainer();
-        BigCheese bc = mockDeps(pico).on(BigCheese.class);
+
+        BigCheese bc = mockDepsFor(BigCheese.class).using(pico).make();
+
         assertNotNull(bc);
         assertNotNull(bc.thing);
         assertIsAMock(bc.thing);
@@ -123,7 +143,8 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanMockConstructorAndInjectees() {
-        BigCheese bc = mockInjectees().on(BigCheese.class);
+        BigCheese bc = mockDepsFor(BigCheese.class).make();
+
         assertNotNull(bc);
         assertNotNull(bc.thing);
         assertIsAMock(bc.thing);
@@ -142,8 +163,8 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanMockPrimivitesWithCustomDifferentAnnotation() {
-        BigCheese bc = mockInjectees(makePicoContainer(CDI(), injectionAnnotation(BigCheese.Foobarred.class)))
-                .on(BigCheese.class);
+        BigCheese bc = mockDepsFor(BigCheese.class).using(makePicoContainer(CDI(), injectionAnnotation(BigCheese.Foobarred.class))).make();
+
         assertNotNull(bc.name);
         assertNotNull(bc.age);
     }

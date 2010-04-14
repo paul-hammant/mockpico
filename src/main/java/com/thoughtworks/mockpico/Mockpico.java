@@ -48,38 +48,65 @@ public class Mockpico {
     public static final InjectionFactory JSR330_ATINJECT = injectionAnnotation(getAtInjectAnnotation());
     public static final InjectionFactory AUTOWIRED = injectionAnnotation(getAutowiredAnnotation());
 
-    public static InnerMockpico mockDeps(Object... exceptions) {
-        return mockDeps(makePicoContainer(), exceptions);
+    public static <T> InjecteesAndContainerToDo<T> mockDepsFor(Class<T> type) {
+        return new InjecteesAndContainerToDo<T>(type);
     }
 
-    public static InnerMockpico mockDeps(MutablePicoContainer pico, Object... exceptions) {
-        return new InnerMockpico(pico, exceptions);
-    }
+    public static class MakeToDo<T> {
+        protected final Class<T> type;
+        protected final MutablePicoContainer mutablePicoContainer;
+        protected final Object[] injectees;
 
-    public static InnerMockpico mockInjectees(Object... exceptions) {
-        return mockInjectees(makePicoContainer(CDI(), PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED), exceptions);
-    }
+        public MakeToDo(Class<T> type) {
+            this(type, makePicoContainer(), new Object[0]);
+        }
+        public MakeToDo(Class<T> type, MutablePicoContainer mutablePicoContainer, Object[] injectees) {
+            this.type = type;
+            this.mutablePicoContainer = mutablePicoContainer;
+            this.injectees = injectees;
+        }
 
-    private static Class<? extends Annotation> getAtInjectAnnotation() {
-        try {
-            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("javax.inject.Inject");
-        } catch (ClassNotFoundException e) {
-            // JSR330 or Spring not in classpath.  No matter carry on without it with a kludge:
-            return org.picocontainer.annotations.Inject.class;
+        public T make() {
+            mutablePicoContainer.addComponent(new Journal());
+            for (Object extra : injectees) {
+                mutablePicoContainer.addComponent(extra);
+            }
+            return mutablePicoContainer.addComponent(type).getComponent(type);
+
         }
     }
 
-    private static Class<? extends Annotation> getAutowiredAnnotation() {
-        try {
-            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("org.springframework.beans.factory.annotation.Autowired");
-        } catch (ClassNotFoundException e) {
-            // JSR330 not in classpath.  No matter carry on without it.
-            return org.picocontainer.annotations.Inject.class;
+    public static class InjecteesToDo<T> extends MakeToDo<T> {
+        public InjecteesToDo(Class<T> type, MutablePicoContainer mutablePicoContainer, Object[] injectees) {
+            super(type, mutablePicoContainer, injectees);
         }
+
+        public InjecteesToDo(Class<T> type) {
+            super(type, ctr(), new Object[0]);
+        }
+
+        public MakeToDo<T> withInjectees(Object... injectees) {
+            return new MakeToDo<T>(type, mutablePicoContainer, injectees);
+        }
+
+        private static MutablePicoContainer ctr() {
+            return makePicoContainer(CDI(), PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED);
+        }
+
     }
 
-    public static InnerMockpico mockInjectees(MutablePicoContainer pico, Object... exceptions) {
-        return new InnerMockpico(pico, exceptions);
+    public static class InjecteesAndContainerToDo<T> extends InjecteesToDo<T> {
+        public InjecteesAndContainerToDo(Class<T> type) {
+            super(type);
+        }
+
+        public InjecteesToDo<T> using(MutablePicoContainer mutablePicoContainer) {
+            return new InjecteesToDo<T>(type, mutablePicoContainer, new Object[0]);
+        }
+
+        public InjecteesToDo<T> withSetters() {
+            return new InjecteesToDo<T>(type, makePicoContainer(CDI(), SDI()), new Object[0]);
+        }
     }
 
     public static MutablePicoContainer makePicoContainer() {
@@ -102,22 +129,21 @@ public class Mockpico {
         return new AnnotatedMethodInjection(annotation, false);
     }
 
-    public static class InnerMockpico {
-
-        private final MutablePicoContainer pico;
-        private final Object[] extras;
-
-        public InnerMockpico(MutablePicoContainer pico, Object... exceptions) {
-            this.pico = pico;
-            this.extras = exceptions;
+    private static Class<? extends Annotation> getAtInjectAnnotation() {
+        try {
+            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("javax.inject.Inject");
+        } catch (ClassNotFoundException e) {
+            // JSR330 or Spring not in classpath.  No matter carry on without it with a kludge:
+            return org.picocontainer.annotations.Inject.class;
         }
+    }
 
-        public <T> T on(Class<T> type) {
-            pico.addComponent(new Journal());
-            for (Object extra : extras) {
-                pico.addComponent(extra);
-            }
-            return pico.addComponent(type).getComponent(type);
+    private static Class<? extends Annotation> getAutowiredAnnotation() {
+        try {
+            return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("org.springframework.beans.factory.annotation.Autowired");
+        } catch (ClassNotFoundException e) {
+            // JSR330 not in classpath.  No matter carry on without it.
+            return org.picocontainer.annotations.Inject.class;
         }
     }
 
