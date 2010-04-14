@@ -23,7 +23,6 @@
 package com.thoughtworks.mockpico;
 
 import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
 import org.picocontainer.ComponentAdapter;
 import org.picocontainer.DefaultPicoContainer;
 import org.picocontainer.InjectionFactory;
@@ -45,79 +44,27 @@ import static org.picocontainer.injectors.Injectors.SDI;
 
 public class Mockpico {
 
-    /**
-     * Creates mock object of given class or interface.
-     * <p/>
-     * See examples in javadoc for {@link Mockito} class
-     *
-     * @param classToMock class or interface to mock
-     * @return mock object
-     */
-    public static <T> T mock(Class<T> classToMock) {
-        return Mockito.mock(classToMock);
+    public static final InjectionFactory PICO_ATINJECT = injectionAnnotation(org.picocontainer.annotations.Inject.class);
+    public static final InjectionFactory JSR330_ATINJECT = injectionAnnotation(getAtInjectAnnotation());
+    public static final InjectionFactory AUTOWIRED = injectionAnnotation(getAutowiredAnnotation());
+
+    public static InnerMockpico mockDeps(Object... exceptions) {
+        return mockDeps(makePicoContainer(), exceptions);
     }
 
-    /**
-     * Specifies mock name. Naming mocks can be helpful for debugging - the name is used in all verification errors.
-     * <p/>
-     * Beware that naming mocks is not a solution for complex code which uses too many mocks or collaborators.
-     * <b>If you have too many mocks then refactor the code</b> so that it's easy to test/debug without necessity of naming mocks.
-     * <p/>
-     * <b>If you use &#064;org.mockito.Mock annotation then you've got naming mocks for free!</b> &#064;Mock uses field name as mock name. {@link org.mockito.Mock Read more.}
-     * <p/>
-     * <p/>
-     * See examples in javadoc for {@link Mockito} class
-     *
-     * @param classToMock class or interface to mock
-     * @param name        of the mock
-     * @return mock object
-     */
-    public static <T> T mock(Class<T> classToMock, String name) {
-        return Mockito.mock(classToMock, name);
+    public static InnerMockpico mockDeps(MutablePicoContainer pico, Object... exceptions) {
+        return new InnerMockpico(pico, exceptions);
     }
 
-    /**
-     * Creates mock with a specified strategy for its answers to interactions.
-     * It's quite advanced feature and typically you don't need it to write decent tests.
-     * However it can be helpful when working with legacy systems.
-     * <p>
-     * It is the default answer so it will be used <b>only when you don't</b> stub the method call.
-     * <p/>
-     * <pre>
-     *   Foo mock = mock(Foo.class, RETURNS_SMART_NULLS);
-     *   Foo mockTwo = mock(Foo.class, new YourOwnAnswer());
-     * </pre>
-     * <p/>
-     * <p>See examples in javadoc for {@link Mockito} class</p>
-     *
-     * @param classToMock   class or interface to mock
-     * @param defaultAnswer default answer for unstubbed methods
-     * @return mock object
-     */
-    public static <T> T mock(Class<T> classToMock, Answer defaultAnswer) {
-        return Mockito.mock(classToMock, defaultAnswer);
-    }
-
-    public static InnerMockpico mockDeps(Object... extras) {
-        return mockDeps(makePicoContainer(), extras);
-    }
-
-    public static InnerMockpico mockDeps(MutablePicoContainer pico, Object... extras) {
-        return new InnerMockpico(pico, extras);
-    }
-
-    public static InnerMockpico mockInjectees(Object... extras) {
-        return mockInjectees(makePicoContainer(CDI(), 
-                new AnnotatedMethodInjection(org.picocontainer.annotations.Inject.class, false),
-                new AnnotatedMethodInjection(getAtInjectAnnotation(), false),
-                new AnnotatedMethodInjection(getAutowiredAnnotation(), false)), extras);
+    public static InnerMockpico mockInjectees(Object... exceptions) {
+        return mockInjectees(makePicoContainer(CDI(), PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED), exceptions);
     }
 
     private static Class<? extends Annotation> getAtInjectAnnotation() {
         try {
             return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass("javax.inject.Inject");
         } catch (ClassNotFoundException e) {
-            // JSR330 not in classpath.  No matter carry on without it.
+            // JSR330 or Spring not in classpath.  No matter carry on without it with a kludge:
             return org.picocontainer.annotations.Inject.class;
         }
     }
@@ -131,8 +78,8 @@ public class Mockpico {
         }
     }
 
-    public static InnerMockpico mockInjectees(MutablePicoContainer pico, Object... extras) {
-        return new InnerMockpico(pico, extras);
+    public static InnerMockpico mockInjectees(MutablePicoContainer pico, Object... exceptions) {
+        return new InnerMockpico(pico, exceptions);
     }
 
     public static MutablePicoContainer makePicoContainer() {
@@ -151,15 +98,18 @@ public class Mockpico {
         return new DefaultPicoContainer(new Caching().wrap(new CompositeInjection(injectionFactories)), new NullLifecycleStrategy(), parent, new MockitoComponentMonitor());
     }
 
+    public static InjectionFactory injectionAnnotation(Class<? extends Annotation> annotation) {
+        return new AnnotatedMethodInjection(annotation, false);
+    }
 
     public static class InnerMockpico {
 
         private final MutablePicoContainer pico;
         private final Object[] extras;
 
-        public InnerMockpico(MutablePicoContainer pico, Object... extras) {
+        public InnerMockpico(MutablePicoContainer pico, Object... exceptions) {
             this.pico = pico;
-            this.extras = extras;
+            this.extras = exceptions;
         }
 
         public <T> T on(Class<T> type) {
@@ -209,9 +159,11 @@ public class Mockpico {
         public Object noComponentFound(MutablePicoContainer pico, Object classToMock) {
             if (classToMock instanceof Class) {
 // TODO primitives
-//                if (classToMock == Integer.class) {
-//                    return 0;
-//                }
+                if (classToMock == Integer.class) {
+                    return (int) Math.random();
+                } else if (classToMock == String.class){
+                    return "random:" + Math.random();
+                }
                 Class toMock = (Class) classToMock;
                 Object mocked = Mockito.mock(toMock);
                 pico.addComponent(classToMock, mocked);

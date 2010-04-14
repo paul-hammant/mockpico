@@ -27,7 +27,12 @@ import org.picocontainer.MutablePicoContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.inject.Inject;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+import static com.thoughtworks.mockpico.Mockpico.injectionAnnotation;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDeps;
 import static com.thoughtworks.mockpico.Mockpico.mockInjectees;
@@ -37,6 +42,7 @@ import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.picocontainer.injectors.Injectors.CDI;
 
 public class MockpicoTestCase {
 
@@ -134,7 +140,13 @@ public class MockpicoTestCase {
         assertNotSame(Thing.class, bc.wine.getClass());
     }
 
-
+    @Test
+    public void testCanMockPrimivitesWithCustomDifferentAnnotation() {
+        BigCheese bc = mockInjectees(makePicoContainer(CDI(), injectionAnnotation(BigCheese.Foobarred.class)))
+                .on(BigCheese.class);
+        assertNotNull(bc.name);
+        assertNotNull(bc.age);
+    }
 
     public static class BigCheese {
         private final AnotherThing anotherThing;
@@ -142,6 +154,8 @@ public class MockpicoTestCase {
         private YetAnotherThing yetAnotherThing;
         private Thing crackers;
         private Thing wine;
+        private String name;
+        private int age;
 
         public BigCheese(AnotherThing anotherThing, Thing thing) {
             this.anotherThing = anotherThing;
@@ -161,6 +175,19 @@ public class MockpicoTestCase {
         public void andWine(Thing thing) {
             this.wine = thing;
         }
+
+        @Foobarred
+        public void foobar(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target({ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD})
+        public static @interface Foobarred {
+        }
+
+
     }
 
     public static class AnotherThing {
