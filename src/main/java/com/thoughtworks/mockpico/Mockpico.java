@@ -24,7 +24,7 @@ package com.thoughtworks.mockpico;
 import org.mockito.Mockito;
 import org.picocontainer.ComponentAdapter;
 import org.picocontainer.DefaultPicoContainer;
-import org.picocontainer.InjectionFactory;
+import org.picocontainer.InjectionType;
 import org.picocontainer.MutablePicoContainer;
 import org.picocontainer.PicoContainer;
 import org.picocontainer.behaviors.Caching;
@@ -43,9 +43,9 @@ import static org.picocontainer.injectors.Injectors.SDI;
 
 public class Mockpico {
 
-    public static final InjectionFactory PICO_ATINJECT = injectionAnnotation(org.picocontainer.annotations.Inject.class);
-    public static final InjectionFactory JSR330_ATINJECT = injectionAnnotation(getInjectionAnnotation("javax.inject.Inject"));
-    public static final InjectionFactory AUTOWIRED = injectionAnnotation(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
+    public static final InjectionType PICO_ATINJECT = injectionAnnotation(org.picocontainer.annotations.Inject.class);
+    public static final InjectionType JSR330_ATINJECT = injectionAnnotation(getInjectionAnnotation("javax.inject.Inject"));
+    public static final InjectionType AUTOWIRED = injectionAnnotation(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
 
     public static <T> ContainerToDo<T> mockDepsFor(Class<T> type) {
         return new ContainerToDo<T>(type);
@@ -99,7 +99,7 @@ public class Mockpico {
             return new InjecteesToDo<T>(type, mutablePicoContainer, new Object[0]);
         }
 
-        public InjecteesToDo<T> withInjectionTypes(InjectionFactory... injectionFactories) {
+        public InjecteesToDo<T> withInjectionTypes(InjectionType... injectionFactories) {
             return using(makePicoContainer(injectionFactories));
         }
 
@@ -116,15 +116,15 @@ public class Mockpico {
         return makePicoContainer(parent, CDI(), SDI());
     }
 
-    public static MutablePicoContainer makePicoContainer(InjectionFactory... injectionFactories) {
+    public static MutablePicoContainer makePicoContainer(InjectionType... injectionFactories) {
         return makePicoContainer(new EmptyPicoContainer(), injectionFactories);
     }
 
-    public static MutablePicoContainer makePicoContainer(PicoContainer parent, InjectionFactory... injectionFactories) {
-        return new DefaultPicoContainer(new Caching().wrap(new CompositeInjection(injectionFactories)), new NullLifecycleStrategy(), parent, new MockitoComponentMonitor());
+    public static MutablePicoContainer makePicoContainer(PicoContainer parent, InjectionType... injectionFactories) {
+        return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new MockitoComponentMonitor(), new Caching().wrap(new CompositeInjection(injectionFactories)));
     }
 
-    public static InjectionFactory injectionAnnotation(Class<? extends Annotation> annotation) {
+    public static InjectionType injectionAnnotation(Class<? extends Annotation> annotation) {
         return new AnnotatedMethodInjection(annotation, false);
     }
 

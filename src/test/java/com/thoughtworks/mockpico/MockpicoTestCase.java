@@ -44,6 +44,10 @@ import static org.picocontainer.injectors.Injectors.CDI;
 
 public class MockpicoTestCase {
 
+    private AnotherThing anotherThing = new AnotherThing();
+    private YetAnotherThing yetAnotherThing = new YetAnotherThing();
+    private Thing thing = new Thing(anotherThing);
+
     @Test
     public void testCanMockConstructorAndSetterDeps() {
         BigCheese bc = mockDepsFor(BigCheese.class).withSetters().make();
@@ -115,9 +119,6 @@ public class MockpicoTestCase {
     
     @Test
     public void testCanSupplyConstructorDepsOnly() {
-        AnotherThing anotherThing = new AnotherThing();
-        YetAnotherThing yetAnotherThing = new YetAnotherThing();
-        Thing thing = new Thing(anotherThing);
 
         BigCheese bc = mockDepsFor(BigCheese.class).withInjectionTypes(CDI()).withInjectees(thing, anotherThing, yetAnotherThing).make();
 
