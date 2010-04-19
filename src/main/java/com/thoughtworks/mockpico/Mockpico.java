@@ -176,7 +176,7 @@ public class Mockpico {
             if (classToMock instanceof Class) {
 // TODO primitives
                 if (classToMock == Integer.class) {
-                    return (int) Math.random();
+                    return (int) (Math.random() * Integer.MAX_VALUE);
                 } else if (classToMock == String.class){
                     return "random:" + Math.random();
                 }

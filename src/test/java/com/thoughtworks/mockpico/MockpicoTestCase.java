@@ -50,112 +50,99 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanMockConstructorAndSetterDeps() {
-        BigCheese bc = mockDepsFor(BigCheese.class).withSetters().make();
+
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .withSetters()
+                .make();
 
         assertNotNull(bc);
-        assertNotNull(bc.thing);
-        assertIsAMock(bc.thing);
-        assertNotSame(Thing.class, bc.thing.getClass());
-        assertNotNull(bc.anotherThing);
-        assertIsAMock(bc.anotherThing);
-        assertNotSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertNotNull(bc.yetAnotherThing);
-        assertIsAMock(bc.yetAnotherThing);
-        assertNotSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
-    }
-
-    private void assertIsAMock(Object obj) {
-        assertTrue(obj.getClass().getName().indexOf("EnhancerByMockitoWithCGLIB") > 0);
+        assertNotNull(bc.thingViaCtor);
+        assertIsAMock(bc.thingViaCtor);
+        assertNotSame(Thing.class, bc.thingViaCtor.getClass());
+        assertNotNull(bc.anotherThingViaCtor);
+        assertIsAMock(bc.anotherThingViaCtor);
+        assertNotSame(AnotherThing.class, bc.anotherThingViaCtor.getClass());
+        assertNotNull(bc.yetAnotherThingViaSetter);
+        assertIsAMock(bc.yetAnotherThingViaSetter);
+        assertNotSame(YetAnotherThing.class, bc.yetAnotherThingViaSetter.getClass());
     }
 
     @Test
     public void testCanSupplyConstructorAndSetterDeps() {
-        AnotherThing anotherThing = new AnotherThing();
-        YetAnotherThing yetAnotherThing = new YetAnotherThing();
-        Thing thing = new Thing(anotherThing);
 
-        BigCheese bc = mockDepsFor(BigCheese.class).withSetters().withInjectees(thing, anotherThing, yetAnotherThing).make();
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .withSetters()
+                .withInjectees(thing, anotherThing, yetAnotherThing)
+                .make();
 
         assertNotNull(bc);
-        assertSame(thing, bc.thing);
-        assertSame(Thing.class, bc.thing.getClass());
-        assertSame(anotherThing, bc.anotherThing);
-        assertSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertSame(yetAnotherThing, bc.yetAnotherThing);
-        assertSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
+        constructorInjectedItemsAreReal(bc);
+        setterInjectedItemsAreReal(bc);
     }
 
     @Test
     public void testPicoCanMakeAndCacheRealConstructorAndSetterDeps() {
-        BigCheese bc = mockDepsFor(BigCheese.class).withSetters().withInjectees(Thing.class, AnotherThing.class, YetAnotherThing.class).make();
+
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .withSetters()
+                .withInjectees(Thing.class, AnotherThing.class, YetAnotherThing.class)
+                .make();
 
         assertNotNull(bc);
-        assertNotNull(bc.thing);
-        assertSame(Thing.class, bc.thing.getClass());
-        assertSame(bc.anotherThing, bc.thing.anotherThing);
-        assertNotNull(bc.anotherThing);
-        assertSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertNotNull(bc.yetAnotherThing);
-        assertSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
+        constructorInjectedItemsAreInjected(bc);
+        setterInjectedItemsAreInjected(bc);
     }
 
     @Test
     public void testCanSkipSettersIfNotSpecified() {
-        AnotherThing anotherThing = new AnotherThing();
-        Thing thing = new Thing(anotherThing);
 
-        BigCheese bc = mockDepsFor(BigCheese.class).withInjectees(thing, anotherThing).make();
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .withInjectees(thing, anotherThing)
+                .make();
 
         assertNotNull(bc);
-        assertNotNull(bc.thing);
-        assertSame(Thing.class, bc.thing.getClass());
-        assertSame(bc.anotherThing, bc.thing.anotherThing);
-        assertNotNull(bc.anotherThing);
-        assertSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertNull(bc.yetAnotherThing);
-        assertNotNull(bc.crackers);
-        assertNotNull(bc.wine);
+        constructorInjectedItemsAreReal(bc);
+        assertNull(bc.yetAnotherThingViaSetter);
+        atInjectItemsAreReal(bc);
+        autowiredItemsAreReal(bc);
     }
-    
+
+
     @Test
     public void testCanSupplyConstructorDepsOnly() {
 
-        BigCheese bc = mockDepsFor(BigCheese.class).withInjectionTypes(CDI()).withInjectees(thing, anotherThing, yetAnotherThing).make();
+        BigCheese bigCheese = mockDepsFor(BigCheese.class)
+                .withInjectionTypes(CDI())
+                .withInjectees(thing, anotherThing, yetAnotherThing)
+                .make();
 
-        assertNotNull(bc);
-        assertSame(thing, bc.thing);
-        assertSame(Thing.class, bc.thing.getClass());
-        assertSame(anotherThing, bc.anotherThing);
-        assertSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertNull(bc.yetAnotherThing);
-        assertNull(bc.crackers);
-        assertNull(bc.wine);
+        assertNotNull(bigCheese);
+        constructorInjectedItemsAreReal(bigCheese);
+        assertNull(bigCheese.yetAnotherThingViaSetter);
+        assertNull(bigCheese.thingViaAtInject);
+        assertNull(bigCheese.thingViaAutowired);
     }
 
     @Test
     public void testCanPopulateAPicoHandedInAndJournalInjections() {
         MutablePicoContainer pico = makePicoContainer();
 
-        BigCheese bc = mockDepsFor(BigCheese.class).using(pico).make();
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .using(pico)
+                .make();
 
         assertNotNull(bc);
-        assertNotNull(bc.thing);
-        assertIsAMock(bc.thing);
-        assertSame(pico.getComponent(Thing.class), bc.thing);
-        assertNotSame(Thing.class, bc.thing.getClass());
-        assertNotNull(bc.anotherThing);
-        assertIsAMock(bc.anotherThing);
-        assertSame(pico.getComponent(AnotherThing.class), bc.anotherThing);
-        assertNotSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertNotNull(bc.yetAnotherThing);
-        assertIsAMock(bc.yetAnotherThing);
-        assertSame(pico.getComponent(YetAnotherThing.class), bc.yetAnotherThing);
-        assertNotSame(YetAnotherThing.class, bc.yetAnotherThing.getClass());
+        constructorInjectedItemsAreMock(bc);
+        setterInjectedItemsAreMock(bc);
+
+        assertSame(pico.getComponent(Thing.class), bc.thingViaCtor);
+        assertSame(pico.getComponent(AnotherThing.class), bc.anotherThingViaCtor);
+        assertSame(pico.getComponent(YetAnotherThing.class), bc.yetAnotherThingViaSetter);
 
         String actual = pico.getComponent(Mockpico.Journal.class).toString()
-                .replace(""+System.identityHashCode(bc.anotherThing), "ONE")
-                .replace(""+System.identityHashCode(bc.thing), "TWO")
-                .replace(""+System.identityHashCode(bc.yetAnotherThing), "THREE");
+                .replace(""+System.identityHashCode(bc.anotherThingViaCtor), "ONE")
+                .replace(""+System.identityHashCode(bc.thingViaCtor), "TWO")
+                .replace(""+System.identityHashCode(bc.yetAnotherThingViaSetter), "THREE");
         assertEquals("Constructor being injected:\n" +
                 "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$AnotherThing, with: Mock for AnotherThing, hashCode: ONE\n" +
                 "  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$Thing, with: Mock for Thing, hashCode: TWO\n" +
@@ -164,72 +151,64 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanMockConstructorAndInjectees() {
-        BigCheese bc = mockDepsFor(BigCheese.class).make();
 
-        assertNotNull(bc);
-        assertNotNull(bc.thing);
-        assertIsAMock(bc.thing);
-        assertNotSame(Thing.class, bc.thing.getClass());
-        assertNotNull(bc.anotherThing);
-        assertIsAMock(bc.anotherThing);
-        assertNotSame(AnotherThing.class, bc.anotherThing.getClass());
-        assertNull(bc.yetAnotherThing);
-        assertNotNull(bc.crackers);
-        assertIsAMock(bc.crackers);
-        assertNotSame(Thing.class, bc.crackers.getClass());
-        assertNotNull(bc.wine);
-        assertIsAMock(bc.wine);
-        assertNotSame(Thing.class, bc.wine.getClass());
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .make();
+
+        constructorInjectedItemsAreMock(bc);
+        assertNull(bc.yetAnotherThingViaSetter);
+        autowiredItemsAreMock(bc);
+        atInjectItemsAreMock(bc);
     }
 
     @Test
     public void testCanMockPrimivitesWithCustomDifferentAnnotation() {
-        BigCheese bc = mockDepsFor(BigCheese.class).using(makePicoContainer(CDI(), injectionAnnotation(BigCheese.Foobarred.class))).make();
 
-        assertNotNull(bc.name);
-        assertNotNull(bc.age);
+        BigCheese bc = mockDepsFor(BigCheese.class)
+                .using(makePicoContainer(CDI(), injectionAnnotation(BigCheese.Foobarred.class)))
+                .make();
+
+        customAnnotationItemsAreRandom(bc);
     }
 
     public static class BigCheese {
-        private final AnotherThing anotherThing;
-        private final Thing thing;
-        private YetAnotherThing yetAnotherThing;
-        private Thing crackers;
-        private Thing wine;
-        private String name;
-        private int age;
+        private final AnotherThing anotherThingViaCtor;
+        private final Thing thingViaCtor;
+        private YetAnotherThing yetAnotherThingViaSetter;
+        private Thing thingViaAtInject;
+        private Thing thingViaAutowired;
+        private String nameViaCustomAnnotation;
+        private int ageViaCustomAnnotation;
 
         public BigCheese(AnotherThing anotherThing, Thing thing) {
-            this.anotherThing = anotherThing;
-            this.thing = thing;
+            this.anotherThingViaCtor = anotherThing;
+            this.thingViaCtor = thing;
         }
 
         public void setQwertyAsdfgh(YetAnotherThing yetAnotherThing) {
-            this.yetAnotherThing = yetAnotherThing;
+            this.yetAnotherThingViaSetter = yetAnotherThing;
         }
 
         @Inject
         public void andCrackers(Thing thing) {
-            this.crackers = thing;
+            this.thingViaAtInject = thing;
         }
 
         @Autowired
         public void andWine(Thing thing) {
-            this.wine = thing;
+            this.thingViaAutowired = thing;
         }
 
         @Foobarred
         public void foobar(String name, int age) {
-            this.name = name;
-            this.age = age;
+            this.nameViaCustomAnnotation = name;
+            this.ageViaCustomAnnotation = age;
         }
 
         @Retention(RetentionPolicy.RUNTIME)
         @Target({ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD})
         public static @interface Foobarred {
         }
-
-
     }
 
     public static class AnotherThing {
@@ -245,4 +224,78 @@ public class MockpicoTestCase {
             this.anotherThing = anotherThing;
         }
     }
+
+    private void autowiredItemsAreMock(BigCheese bc) {
+        assertNotNull(bc.thingViaAutowired);
+        assertIsAMock(bc.thingViaAutowired);
+    }
+
+    private void customAnnotationItemsAreRandom(BigCheese bc) {
+        assertNotNull(bc.ageViaCustomAnnotation);
+        assertTrue(bc.nameViaCustomAnnotation.startsWith("random:"));
+        assertNotNull(bc.nameViaCustomAnnotation);
+        assertTrue(bc.ageViaCustomAnnotation > 0);
+    }
+
+    private void atInjectItemsAreMock(BigCheese bc) {
+        assertNotNull(bc.thingViaAtInject);
+        assertIsAMock(bc.anotherThingViaCtor);
+
+    }
+
+    private void setterInjectedItemsAreInjected(BigCheese bc) {
+        assertNotNull(bc.yetAnotherThingViaSetter);
+    }
+
+    private void setterInjectedItemsAreReal(BigCheese bc) {
+        setterInjectedItemsAreInjected(bc);
+        assertSame(YetAnotherThing.class, bc.yetAnotherThingViaSetter.getClass());
+    }
+
+    private void setterInjectedItemsAreMock(BigCheese bc) {
+        setterInjectedItemsAreInjected(bc);
+        assertIsAMock(bc.yetAnotherThingViaSetter);
+    }
+
+    private void assertIsAMock(Object obj) {
+        assertTrue(isAMock(obj));
+    }
+
+    private boolean isAMock(Object obj) {
+        return obj.getClass().getName().indexOf("EnhancerByMockitoWithCGLIB") > 0;
+    }
+
+    private void autowiredItemsAreReal(BigCheese bc) {
+        assertNotNull(bc.thingViaAutowired);
+        assertSame(Thing.class, bc.thingViaAutowired.getClass());
+    }
+
+    private void atInjectItemsAreReal(BigCheese bc) {
+        assertNotNull(bc.thingViaAtInject);
+        assertSame(Thing.class, bc.thingViaAtInject.getClass());
+    }
+
+    private void constructorInjectedItemsAreReal(BigCheese bc) {
+        constructorInjectedItemsAreInjected(bc);
+        assertSame(thing, bc.thingViaCtor);
+        assertSame(Thing.class, bc.thingViaCtor.getClass());
+        assertSame(anotherThing, bc.anotherThingViaCtor);
+        assertSame(AnotherThing.class, bc.anotherThingViaCtor.getClass());
+        assertSame(bc.anotherThingViaCtor, bc.thingViaCtor.anotherThing);
+
+    }
+
+    private void constructorInjectedItemsAreMock(BigCheese bc) {
+        constructorInjectedItemsAreInjected(bc);
+        assertIsAMock(bc.thingViaCtor);
+        assertIsAMock(bc.anotherThingViaCtor);
+    }
+
+    private void constructorInjectedItemsAreInjected(BigCheese bc) {
+        assertNotNull(bc.thingViaCtor);
+        assertNotNull(bc.anotherThingViaCtor);
+    }
+
+
+
 }
