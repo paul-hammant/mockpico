@@ -27,6 +27,7 @@ import org.picocontainer.DefaultPicoContainer;
 import org.picocontainer.InjectionType;
 import org.picocontainer.MutablePicoContainer;
 import org.picocontainer.PicoContainer;
+import org.picocontainer.adapters.InstanceAdapter;
 import org.picocontainer.behaviors.Caching;
 import org.picocontainer.containers.EmptyPicoContainer;
 import org.picocontainer.injectors.AnnotatedMethodInjection;
@@ -37,6 +38,7 @@ import org.picocontainer.monitors.NullComponentMonitor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
+import java.util.Collection;
 
 import static org.picocontainer.injectors.Injectors.CDI;
 import static org.picocontainer.injectors.Injectors.SDI;
@@ -51,33 +53,53 @@ public class Mockpico {
         return new ContainerToDo<T>(type);
     }
 
+    public static void verifyNoMoreInteractionsForAll(PicoContainer mocks) {
+        Collection<ComponentAdapter<?>> foo = mocks.getComponentAdapters();
+        for (ComponentAdapter<?> componentAdapter : foo) {
+            InstanceAdapter ia = componentAdapter.findAdapterOfType(InstanceAdapter.class);
+            if (ia != null && ia.getComponentImplementation().getName().indexOf("EnhancerByMockitoWithCGLIB") > 0) {
+                Mockito.verifyNoMoreInteractions(ia.getComponentInstance(mocks, ComponentAdapter.NOTHING.class));
+            }
+        }
+    }
+
+    public static void resetAll(MutablePicoContainer mocks) {
+        Collection<ComponentAdapter<?>> foo = mocks.getComponentAdapters();
+        for (ComponentAdapter<?> componentAdapter : foo) {
+            InstanceAdapter ia = componentAdapter.findAdapterOfType(InstanceAdapter.class);
+            if (ia != null && ia.getComponentImplementation().getName().indexOf("EnhancerByMockitoWithCGLIB") > 0) {
+                Mockito.reset(ia.getComponentInstance(mocks, ComponentAdapter.NOTHING.class));
+            }
+        }
+    }
+
     public static class MakeToDo<T> {
         protected final Class<T> type;
-        protected final MutablePicoContainer mutablePicoContainer;
+        protected final MutablePicoContainer mocks;
         protected final Object[] injectees;
 
         public MakeToDo(Class<T> type) {
             this(type, makePicoContainer(), new Object[0]);
         }
-        public MakeToDo(Class<T> type, MutablePicoContainer mutablePicoContainer, Object[] injectees) {
+        public MakeToDo(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
             this.type = type;
-            this.mutablePicoContainer = mutablePicoContainer;
+            this.mocks = mocks;
             this.injectees = injectees;
         }
 
         public T make() {
-            mutablePicoContainer.addComponent(new Journal());
+            mocks.addComponent(new Journal());
             for (Object extra : injectees) {
-                mutablePicoContainer.addComponent(extra);
+                mocks.addComponent(extra);
             }
-            return mutablePicoContainer.addComponent(type).getComponent(type);
+            return mocks.addComponent(type).getComponent(type);
 
         }
     }
 
     public static class InjecteesToDo<T> extends MakeToDo<T> {
-        public InjecteesToDo(Class<T> type, MutablePicoContainer mutablePicoContainer, Object[] injectees) {
-            super(type, mutablePicoContainer, injectees);
+        public InjecteesToDo(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
+            super(type, mocks, injectees);
         }
 
         public InjecteesToDo(Class<T> type) {
@@ -85,7 +107,7 @@ public class Mockpico {
         }
 
         public MakeToDo<T> withInjectees(Object... injectees) {
-            return new MakeToDo<T>(type, mutablePicoContainer, injectees);
+            return new MakeToDo<T>(type, mocks, injectees);
         }
 
     }
@@ -95,8 +117,8 @@ public class Mockpico {
             super(type);
         }
 
-        public InjecteesToDo<T> using(MutablePicoContainer mutablePicoContainer) {
-            return new InjecteesToDo<T>(type, mutablePicoContainer, new Object[0]);
+        public InjecteesToDo<T> using(MutablePicoContainer mocks) {
+            return new InjecteesToDo<T>(type, mocks, new Object[0]);
         }
 
         public InjecteesToDo<T> withInjectionTypes(InjectionType... injectionFactories) {

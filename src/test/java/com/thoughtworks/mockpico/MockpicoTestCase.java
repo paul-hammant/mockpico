@@ -22,6 +22,8 @@ package com.thoughtworks.mockpico;
  */
 
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.exceptions.verification.NoInteractionsWanted;
 import org.picocontainer.MutablePicoContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -31,10 +33,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.math.BigInteger;
+import java.util.List;
 
+import static com.sun.tools.internal.ws.wsdl.parser.Util.fail;
 import static com.thoughtworks.mockpico.Mockpico.injectionAnnotation;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
+import static com.thoughtworks.mockpico.Mockpico.resetAll;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -170,6 +175,49 @@ public class MockpicoTestCase {
                 .make();
 
         customAnnotationItemsAreRandom(bc);
+    }
+
+    @Test
+    public void verifyNoMoreInteractionsCanBePercolated() {
+        MutablePicoContainer mocks = makePicoContainer();
+
+        NeedsList nl = mockDepsFor(NeedsList.class)
+                .using(mocks)
+                .make();
+
+        nl.oops();
+        try {
+            Mockpico.verifyNoMoreInteractionsForAll(mocks);
+            fail("should have barfed");
+        } catch (NoInteractionsWanted e) {
+            // expected  
+        }
+    }
+
+    @Test
+    public void resetCanBePercolated() {
+        MutablePicoContainer mocks = makePicoContainer();
+
+        NeedsList nl = mockDepsFor(NeedsList.class)
+                .using(mocks)
+                .make();
+
+        nl.oops();
+        resetAll(mocks);
+        Mockito.verifyNoMoreInteractions(mocks.getComponent(List.class));
+    }
+
+    public static class NeedsList {
+        private List list;
+
+        public NeedsList(List list) {
+            this.list = list;
+        }
+
+        public void oops() {
+            list.add("oops");
+        }
+
     }
 
     public static class BigCheese {
