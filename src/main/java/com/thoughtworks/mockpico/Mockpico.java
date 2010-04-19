@@ -174,16 +174,29 @@ public class Mockpico {
         @Override
         public Object noComponentFound(MutablePicoContainer pico, Object classToMock) {
             if (classToMock instanceof Class) {
-// TODO primitives
                 if (classToMock == Integer.class) {
-                    return (int) (Math.random() * Integer.MAX_VALUE);
+                    return 0;
+                } else if (classToMock == Long.class){
+                    return (long) 0;
+                } else if (classToMock == Double.class){
+                    return (double) 0;
+                } else if (classToMock == Byte.class){
+                    return (byte) 0;
+                } else if (classToMock == Short.class){
+                    return (short) 0;
+                } else if (classToMock == Float.class){
+                    return (float) 0;
+                } else if (classToMock == Boolean.class){
+                    return false;
+                } else if (classToMock == Character.class){
+                    return (char) 0;
                 } else if (classToMock == String.class){
-                    return "random:" + Math.random();
+                    return "";
+                } else {
+                    Object mocked = Mockito.mock((Class) classToMock);
+                    pico.addComponent(classToMock, mocked);
+                    return mocked;
                 }
-                Class toMock = (Class) classToMock;
-                Object mocked = Mockito.mock(toMock);
-                pico.addComponent(classToMock, mocked);
-                return mocked;
             }
             return null;
         }

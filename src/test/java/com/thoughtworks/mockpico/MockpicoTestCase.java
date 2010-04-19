@@ -30,6 +30,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.math.BigInteger;
 
 import static com.thoughtworks.mockpico.Mockpico.injectionAnnotation;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
@@ -162,7 +163,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanMockPrimivitesWithCustomDifferentAnnotation() {
+    public void testCanMockPrimivitesAndUseCustomDifferentAnnotation() {
 
         BigCheese bc = mockDepsFor(BigCheese.class)
                 .using(makePicoContainer(CDI(), injectionAnnotation(BigCheese.Foobarred.class)))
@@ -179,6 +180,15 @@ public class MockpicoTestCase {
         private Thing thingViaAutowired;
         private String nameViaCustomAnnotation;
         private int ageViaCustomAnnotation;
+        private double doubleViaCustomAnnotation;
+        private Double double2ViaCustomAnnotation;
+        private boolean booleanViaCustomAnnotation;
+        private float floatViaCustomAnnotation;
+        private byte byteViaCustomAnnotation;
+        private short shortViaCustomAnnotation;
+        private BigInteger bigIntViaCustomAnnotation;
+        private char charViaCustomAnnotation;
+        private Long longViaCustomAnnotation;
 
         public BigCheese(AnotherThing anotherThing, Thing thing) {
             this.anotherThingViaCtor = anotherThing;
@@ -200,9 +210,27 @@ public class MockpicoTestCase {
         }
 
         @Foobarred
-        public void foobar(String name, int age) {
+        public void foobar(String name, int age,
+                           double doubleViaCustomAnnotation,
+                           Double double2ViaCustomAnnotation,
+                           boolean booleanViaCustomAnnotation,
+                           float floatViaCustomAnnotation,
+                           byte byteViaCustomAnnotation,
+                           short shortViaCustomAnnotation,
+                           BigInteger bigIntViaCustomAnnotation,
+                           char charViaCustomAnnotation,
+                           Long longViaCustomAnnotation) {
             this.nameViaCustomAnnotation = name;
             this.ageViaCustomAnnotation = age;
+            this.doubleViaCustomAnnotation = doubleViaCustomAnnotation;
+            this.double2ViaCustomAnnotation = double2ViaCustomAnnotation;
+            this.booleanViaCustomAnnotation = booleanViaCustomAnnotation;
+            this.floatViaCustomAnnotation = floatViaCustomAnnotation;
+            this.byteViaCustomAnnotation = byteViaCustomAnnotation;
+            this.shortViaCustomAnnotation = shortViaCustomAnnotation;
+            this.bigIntViaCustomAnnotation = bigIntViaCustomAnnotation;
+            this.charViaCustomAnnotation = charViaCustomAnnotation;
+            this.longViaCustomAnnotation = longViaCustomAnnotation;
         }
 
         @Retention(RetentionPolicy.RUNTIME)
@@ -231,10 +259,16 @@ public class MockpicoTestCase {
     }
 
     private void customAnnotationItemsAreRandom(BigCheese bc) {
-        assertNotNull(bc.ageViaCustomAnnotation);
-        assertTrue(bc.nameViaCustomAnnotation.startsWith("random:"));
-        assertNotNull(bc.nameViaCustomAnnotation);
-        assertTrue(bc.ageViaCustomAnnotation > 0);
+        assertEquals("", bc.nameViaCustomAnnotation);
+        assertEquals(0, bc.ageViaCustomAnnotation);
+        assertEquals(0.0, bc.doubleViaCustomAnnotation);
+        assertEquals(0.0, bc.double2ViaCustomAnnotation);
+        assertEquals(0, bc.byteViaCustomAnnotation);
+        assertEquals(0, bc.shortViaCustomAnnotation);
+        assertEquals((float) 0.0, bc.floatViaCustomAnnotation);
+        assertEquals(false, bc.booleanViaCustomAnnotation);
+        assertEquals(0, bc.charViaCustomAnnotation);
+        assertEquals(new Long(0), bc.longViaCustomAnnotation);
     }
 
     private void atInjectItemsAreMock(BigCheese bc) {
