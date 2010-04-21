@@ -90,10 +90,18 @@ public class Mockpico {
         public T make() {
             mocks.addComponent(new Journal());
             for (Object extra : injectees) {
-                mocks.addComponent(extra);
+                String s = extra.getClass().getName();
+                if (s.indexOf("ByMockito") > -1) {
+                    Class<?> parent = extra.getClass().getSuperclass();
+                    if (parent == Object.class) {
+                        parent = extra.getClass().getInterfaces()[0];
+                    }
+                    mocks.addComponent(parent, extra);
+                } else {
+                    mocks.addComponent(extra);
+                }
             }
             return mocks.addComponent(type).getComponent(type);
-
         }
     }
 

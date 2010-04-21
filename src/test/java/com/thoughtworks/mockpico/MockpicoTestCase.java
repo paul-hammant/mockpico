@@ -46,6 +46,7 @@ import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.picocontainer.injectors.Injectors.CDI;
 
 public class MockpicoTestCase {
@@ -165,6 +166,17 @@ public class MockpicoTestCase {
         assertNull(bc.yetAnotherThingViaSetter);
         autowiredItemsAreMock(bc);
         atInjectItemsAreMock(bc);
+    }
+
+    @Test
+    public void testCanUseMocksPassedIn() {
+        List list1 = mock(List.class);
+
+        NeedsList nl = mockDepsFor(NeedsList.class)
+                .withInjectees(list1)
+                .make();
+
+        assertSame(list1, nl.list);
     }
 
     @Test
