@@ -50,9 +50,9 @@ import static org.picocontainer.injectors.Injectors.CDI;
 
 public class MockpicoTestCase {
 
-    private static C c = new C();  // represented by C* in asserts
-    private static D d = new D();  // represented by D* in asserts
-    private static B b = new B(c); // represented by B*<C*> in asserts
+    private static C c = new C();
+    private static D d = new D();
+    private static B b = new B(c);
 
     @Test
     public void testCanMockConstructorAndSetterDepsWhenNotInjected() {
@@ -72,7 +72,7 @@ public class MockpicoTestCase {
                 .withInjectees(b, c, d)
                 .make();
 
-        assertEquals("A(C*,B*<C*>)setIt(D*)", a.toString());
+        assertEquals("A(c,b<c>)setIt(d)", a.toString());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class MockpicoTestCase {
                 .withInjectees(b, c)
                 .make();
 
-        assertEquals("A(C*,B*<C*>)inj3ct(B*<C*>)aut0wireMe(B*<C*>)", a.toString());
+        assertEquals("A(c,b<c>)inj3ct(b<c>)aut0wireMe(b<c>)", a.toString());
     }
 
 
@@ -105,7 +105,7 @@ public class MockpicoTestCase {
                 .withInjectees(b, c, d)
                 .make();
 
-        assertEquals("A(C*,B*<C*>)", a.toString());
+        assertEquals("A(c,b<c>)", a.toString());
     }
 
     @Test
@@ -223,11 +223,11 @@ public class MockpicoTestCase {
                 } else {
                     String name = obj.getClass().getName();
                     if (obj == b) {
-                        return "B*<C*>";
+                        return "b<c>";
                     } else if (obj == c) {
-                        return "C*";
+                        return "c";
                     } else if (obj == d) {
-                        return "D*";
+                        return "d";
                     }
                     p = name.substring(name.lastIndexOf(".")+1).replace("MockpicoTestCase$", "") + "#" + reals++;
                     if (obj instanceof B) {
