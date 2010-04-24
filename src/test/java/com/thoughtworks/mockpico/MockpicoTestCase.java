@@ -61,8 +61,10 @@ public class MockpicoTestCase {
                 .withSetters()
                 .make();
 
-        assertEquals(aMadeWith(mockCandB())
-                + setterCalledWith(mockD()), a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(mockCandB()),
+                setterCalledWith(mockD())
+        ).to(a);
     }
 
     @Test
@@ -73,8 +75,10 @@ public class MockpicoTestCase {
                 .withInjectees(b, c, d)
                 .make();
 
-        assertEquals(aMadeWith(memberVarsCandB())
-                + setterCalledWith(memberVarD()), a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(memberVarsCandB()),
+                setterCalledWith(memberVarD())
+        ).to(a);
     }
 
     @Test
@@ -85,8 +89,10 @@ public class MockpicoTestCase {
                 .withInjectees(B.class, C.class, D.class)
                 .make();
 
-        assertEquals(aMadeWith(newCandB())
-                + setterCalledWith(newD()), a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(newCandB()),
+                setterCalledWith(newD())
+        ).to(a);
     }
 
     @Test
@@ -96,12 +102,13 @@ public class MockpicoTestCase {
                 .withInjectees(b, c)
                 .make();
 
-        assertEquals(aMadeWith(memberVarsCandB())
-                + atInjectMethodCalledWithBmemberVar(memberVarB())
-                + autowiredMethodCalledWith(memberVarB())
-                + autowiredFieldSetTo(memberVarB())
-                + atInjectFieldSetTo(memberVarB())
-                , a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(memberVarsCandB()),
+                atInjectMethodCalledWithBmemberVar(memberVarB()),
+                autowiredMethodCalledWith(memberVarB()),
+                autowiredFieldSetTo(memberVarB()),
+                atInjectFieldSetTo(memberVarB())
+        ).to(a);
     }
 
     @Test
@@ -112,7 +119,9 @@ public class MockpicoTestCase {
                 .withInjectees(b, c, d)
                 .make();
 
-        assertEquals(aMadeWith(memberVarsCandB()), a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(memberVarsCandB())
+        ).to(a);
     }
 
     @Test
@@ -123,8 +132,10 @@ public class MockpicoTestCase {
                 .using(pico)
                 .make();
 
-        assertEquals(aMadeWith(mockCandB())
-                + setterCalledWith(mockD()), a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(mockCandB()),
+                setterCalledWith(mockD())
+        ).to(a);
 
         String actual = pico.getComponent(Mockpico.Journal.class).toString();
         assertTrue(actual.indexOf("Constructor being injected:") > -1);
@@ -139,11 +150,13 @@ public class MockpicoTestCase {
         A a = mockDepsFor(A.class)
                 .make();
 
-        assertEquals(aMadeWith(mockCandB())
-                + atInjectMethodCalledWithBmemberVar(mockB())
-                + autowiredMethodCalledWith(mockB())
-                + autowiredFieldSetTo(mockB())
-                + atInjectFieldSetTo(mockB()), a.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(mockCandB()),
+                atInjectMethodCalledWithBmemberVar(mockB()),
+                autowiredMethodCalledWith(mockB()),
+                autowiredFieldSetTo(mockB()),
+                atInjectFieldSetTo(mockB())
+        ).to(a);
     }
 
     @Test
@@ -160,11 +173,14 @@ public class MockpicoTestCase {
     @Test
     public void testCanMockPrimivitesAndAlsoUseCustomAnnotation() {
 
-        A bc = mockDepsFor(A.class)
+        A a = mockDepsFor(A.class)
                 .using(makePicoContainer(CDI(), annotatedMethodInjection(A.Foobarred.class)))
                 .make();
 
-        assertEquals(aMadeWith(mockCandB()) + customAnnotatedMethodCalledWith(aBunchOfPrimitives()), bc.toString());
+        assertTheseHappenedInOrder(
+                aMadeWith(mockCandB()),
+                customAnnotatedMethodCalledWith(aBunchOfPrimitives())
+        ).to(a);
     }
 
     @Test
@@ -209,7 +225,6 @@ public class MockpicoTestCase {
         }
 
     }
-
 
     public static class A {
 
@@ -390,6 +405,24 @@ public class MockpicoTestCase {
 
     private String customAnnotatedMethodCalledWith(String with) {
         return ",foobar("+with+")";
+    }
+
+    private Foo assertTheseHappenedInOrder(String... things) {
+        return new Foo(things);
+    }
+
+    private static class Foo {
+        private  String whatShouldHaveHappened = "";
+
+        public Foo(String[] happenings) {
+            for (String happening : happenings) {
+                whatShouldHaveHappened += happening;
+            }
+        }
+
+        public void to(A a) {
+            assertEquals(whatShouldHaveHappened, a.toString());
+        }
     }
 
 }
