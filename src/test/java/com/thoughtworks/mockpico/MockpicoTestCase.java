@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.sun.tools.internal.ws.wsdl.parser.Util.fail;
-import static com.thoughtworks.mockpico.Mockpico.injectionAnnotation;
+import static com.thoughtworks.mockpico.Mockpico.annotatedMethodInjection;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
 import static com.thoughtworks.mockpico.Mockpico.resetAll;
@@ -61,7 +61,8 @@ public class MockpicoTestCase {
                 .withSetters()
                 .make();
 
-        assertEquals("A(mock[C]#0,mock[B]#1)setIt(mock[D]#2)", a.toString());
+        assertEquals(aMadeWith(mockCandB())
+                + setterCalledWith(mockD()), a.toString());
     }
 
     @Test
@@ -72,7 +73,8 @@ public class MockpicoTestCase {
                 .withInjectees(b, c, d)
                 .make();
 
-        assertEquals("A(c,b<c>)setIt(d)", a.toString());
+        assertEquals(aMadeWith(memberVarsCandB())
+                + setterCalledWith(memberVarD()), a.toString());
     }
 
     @Test
@@ -83,7 +85,8 @@ public class MockpicoTestCase {
                 .withInjectees(B.class, C.class, D.class)
                 .make();
 
-        assertEquals("A(C#0,B#1<C#0>)setIt(D#2)", a.toString());
+        assertEquals(aMadeWith(newCandB())
+                + setterCalledWith(newD()), a.toString());
     }
 
     @Test
@@ -93,9 +96,13 @@ public class MockpicoTestCase {
                 .withInjectees(b, c)
                 .make();
 
-        assertEquals("A(c,b<c>)inj3ct(b<c>)aut0wireMe(b<c>)", a.toString());
+        assertEquals(aMadeWith(memberVarsCandB())
+                + atInjectMethodCalledWithBmemberVar(memberVarB())
+                + autowiredMethodCalledWith(memberVarB())
+                + autowiredFieldSetTo(memberVarB())
+                + atInjectFieldSetTo(memberVarB())
+                , a.toString());
     }
-
 
     @Test
     public void testCanSpecifyConstructorInjectionOnly() {
@@ -105,7 +112,7 @@ public class MockpicoTestCase {
                 .withInjectees(b, c, d)
                 .make();
 
-        assertEquals("A(c,b<c>)", a.toString());
+        assertEquals(aMadeWith(memberVarsCandB()), a.toString());
     }
 
     @Test
@@ -116,7 +123,8 @@ public class MockpicoTestCase {
                 .using(pico)
                 .make();
 
-        assertEquals("A(mock[C]#0,mock[B]#1)setIt(mock[D]#2)", a.toString());
+        assertEquals(aMadeWith(mockCandB())
+                + setterCalledWith(mockD()), a.toString());
 
         String actual = pico.getComponent(Mockpico.Journal.class).toString();
         assertTrue(actual.indexOf("Constructor being injected:") > -1);
@@ -131,7 +139,11 @@ public class MockpicoTestCase {
         A a = mockDepsFor(A.class)
                 .make();
 
-        assertEquals("A(mock[C]#0,mock[B]#1)inj3ct(mock[B]#1)aut0wireMe(mock[B]#1)", a.toString());
+        assertEquals(aMadeWith(mockCandB())
+                + atInjectMethodCalledWithBmemberVar(mockB())
+                + autowiredMethodCalledWith(mockB())
+                + autowiredFieldSetTo(mockB())
+                + atInjectFieldSetTo(mockB()), a.toString());
     }
 
     @Test
@@ -149,10 +161,10 @@ public class MockpicoTestCase {
     public void testCanMockPrimivitesAndAlsoUseCustomAnnotation() {
 
         A bc = mockDepsFor(A.class)
-                .using(makePicoContainer(CDI(), injectionAnnotation(A.Foobarred.class)))
+                .using(makePicoContainer(CDI(), annotatedMethodInjection(A.Foobarred.class)))
                 .make();
 
-        assertEquals("A(mock[C]#0,mock[B]#1)foobar(String#0,Integer#1,Double#2,Double#2,Float#3,Byte#4,Short#5,mock[BigInteger]#2,Character#6,Long#7)", bc.toString());
+        assertEquals(aMadeWith(mockCandB()) + customAnnotatedMethodCalledWith(aBunchOfPrimitives()), bc.toString());
     }
 
     @Test
@@ -206,9 +218,22 @@ public class MockpicoTestCase {
         private int mocks;
         private int reals;
 
+        @Autowired
+        private B b1;
+
+        @Inject
+        private B b2;
+
         @Override
         public String toString() {
-            return sb.toString();
+            String s = sb.toString();
+            if (b1 != null) {
+                s = s + ",b1=" + prt(b1);
+            }
+            if (b1 != null) {
+                s = s + ",b2=" + prt(b2);
+            }
+            return s;
         }
 
         private String prt(Object obj) {
@@ -245,17 +270,17 @@ public class MockpicoTestCase {
         }
 
         public void setIt(D d) {
-            sb.append("setIt(" + prt(d) + ")");
+            sb.append(",setIt(" + prt(d) + ")");
         }
 
         @Inject
         public void inj3ct(B b) {
-            sb.append("inj3ct(" + prt(b) + ")");
+            sb.append(",inj3ct(" + prt(b) + ")");
         }
 
         @Autowired
         public void aut0wireMe(B b) {
-            sb.append("aut0wireMe(" + prt(b) + ")");
+            sb.append(",aut0wireMe(" + prt(b) + ")");
         }
 
         @Foobarred
@@ -270,7 +295,7 @@ public class MockpicoTestCase {
                            char chr,
                            Long lng) {
 
-            sb.append("foobar(" + prt(str) + "," +
+            sb.append(",foobar(" + prt(str) + "," +
                     prt(iint) + "," +
                     prt(dbl) + "," +
                     prt(dbl2) + "," +
@@ -301,6 +326,70 @@ public class MockpicoTestCase {
         public B(C c) {
             this.c = c;
         }
+    }
+
+    private String newD() {
+        return "D#2";
+    }
+
+    private String newCandB() {
+        return "C#0,B#1<C#0>";
+    }
+
+    private String mockD() {
+        return "mock[D]#2";
+    }
+
+    private String setterCalledWith(String with) {
+        return ",setIt(" + with + ")";
+    }
+
+    private String memberVarD() {
+        return "d";
+    }
+
+    private String autowiredMethodCalledWith(String with) {
+        return ",aut0wireMe(" + with + ")";
+    }
+
+    private String autowiredFieldSetTo(String to) {
+        return ",b1=" + to;
+    }
+
+    private String atInjectFieldSetTo(String to) {
+        return ",b2=" + to;
+    }
+
+    private String memberVarB() {
+        return "b<c>";
+    }
+
+    private String memberVarsCandB() {
+        return "c,b<c>";
+    }
+
+    private String atInjectMethodCalledWithBmemberVar(String with) {
+        return ",inj3ct("+with+")";
+    }
+
+    private String aMadeWith(String with) {
+        return "A("+with+")";
+    }
+
+    private String mockB() {
+        return "mock[B]#1";
+    }
+
+    private String mockCandB() {
+        return "mock[C]#0,mock[B]#1";
+    }
+
+    private String aBunchOfPrimitives() {
+        return "String#0,Integer#1,Double#2,Double#2,Float#3,Byte#4,Short#5,mock[BigInteger]#2,Character#6,Long#7";
+    }
+
+    private String customAnnotatedMethodCalledWith(String with) {
+        return ",foobar("+with+")";
     }
 
 }

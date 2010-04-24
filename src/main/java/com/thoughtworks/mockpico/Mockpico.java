@@ -30,6 +30,7 @@ import org.picocontainer.PicoContainer;
 import org.picocontainer.adapters.InstanceAdapter;
 import org.picocontainer.behaviors.Caching;
 import org.picocontainer.containers.EmptyPicoContainer;
+import org.picocontainer.injectors.AnnotatedFieldInjection;
 import org.picocontainer.injectors.AnnotatedMethodInjection;
 import org.picocontainer.injectors.CompositeInjection;
 import org.picocontainer.lifecycle.NullLifecycleStrategy;
@@ -45,9 +46,12 @@ import static org.picocontainer.injectors.Injectors.SDI;
 
 public class Mockpico {
 
-    public static final InjectionType PICO_ATINJECT = injectionAnnotation(org.picocontainer.annotations.Inject.class);
-    public static final InjectionType JSR330_ATINJECT = injectionAnnotation(getInjectionAnnotation("javax.inject.Inject"));
-    public static final InjectionType AUTOWIRED = injectionAnnotation(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
+    public static final InjectionType PICO_ATINJECT_METHODS = annotatedMethodInjection(org.picocontainer.annotations.Inject.class);
+    public static final InjectionType JSR330_ATINJECT_METHODS = annotatedMethodInjection(getInjectionAnnotation("javax.inject.Inject"));
+    public static final InjectionType AUTOWIRED_METHODS = annotatedMethodInjection(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
+    public static final InjectionType PICO_ATINJECT_FIELDS = annotatedFieldInjection(org.picocontainer.annotations.Inject.class);
+    public static final InjectionType JSR330_ATINJECT_FIELDS = annotatedFieldInjection(getInjectionAnnotation("javax.inject.Inject"));
+    public static final InjectionType AUTOWIRED_FIELDS = annotatedFieldInjection(getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired"));
 
     public static <T> ContainerToDo<T> mockDepsFor(Class<T> type) {
         return new ContainerToDo<T>(type);
@@ -111,7 +115,8 @@ public class Mockpico {
         }
 
         public InjecteesToDo(Class<T> type) {
-            super(type, makePicoContainer(CDI(), PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED), new Object[0]);
+            super(type, makePicoContainer(CDI(), PICO_ATINJECT_METHODS, JSR330_ATINJECT_METHODS, AUTOWIRED_METHODS,
+                    PICO_ATINJECT_FIELDS, JSR330_ATINJECT_FIELDS, AUTOWIRED_FIELDS), new Object[0]);
         }
 
         public MakeToDo<T> withInjectees(Object... injectees) {
@@ -154,8 +159,12 @@ public class Mockpico {
         return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new MockitoComponentMonitor(), new Caching().wrap(new CompositeInjection(injectionFactories)));
     }
 
-    public static InjectionType injectionAnnotation(Class<? extends Annotation> annotation) {
+    public static AnnotatedMethodInjection annotatedMethodInjection(Class<? extends Annotation> annotation) {
         return new AnnotatedMethodInjection(annotation, false);
+    }
+
+    public static AnnotatedFieldInjection annotatedFieldInjection(Class<? extends Annotation> annotation) {
+        return new AnnotatedFieldInjection(annotation);
     }
 
     private static Class<? extends Annotation> getInjectionAnnotation(String className) {
