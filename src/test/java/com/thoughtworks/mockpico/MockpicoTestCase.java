@@ -104,7 +104,7 @@ public class MockpicoTestCase {
 
         assertTheseHappenedInOrder(
                 aMadeWith(memberVarsCandB()),
-                atInjectMethodCalledWithBmemberVar(memberVarB()),
+                atInjectMethodCalledWith(memberVarB()),
                 autowiredMethodCalledWith(memberVarB()),
                 autowiredFieldSetTo(memberVarB()),
                 atInjectFieldSetTo(memberVarB())
@@ -152,7 +152,7 @@ public class MockpicoTestCase {
 
         assertTheseHappenedInOrder(
                 aMadeWith(mockCandB()),
-                atInjectMethodCalledWithBmemberVar(mockB()),
+                atInjectMethodCalledWith(mockB()),
                 autowiredMethodCalledWith(mockB()),
                 autowiredFieldSetTo(mockB()),
                 atInjectFieldSetTo(mockB())
@@ -383,7 +383,7 @@ public class MockpicoTestCase {
         return "c,b<c>";
     }
 
-    private String atInjectMethodCalledWithBmemberVar(String with) {
+    private String atInjectMethodCalledWith(String with) {
         return ",inj3ct("+with+")";
     }
 
