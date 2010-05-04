@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.exceptions.verification.NoInteractionsWanted;
 import org.picocontainer.MutablePicoContainer;
+import org.picocontainer.injectors.AnnotatedMethodInjection;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.inject.Inject;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.sun.tools.internal.ws.wsdl.parser.Util.fail;
-import static com.thoughtworks.mockpico.Mockpico.annotatedMethodInjection;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
 import static com.thoughtworks.mockpico.Mockpico.resetAll;
@@ -174,7 +174,7 @@ public class MockpicoTestCase {
     public void testCanMockPrimivitesAndAlsoUseCustomAnnotation() {
 
         A a = mockDepsFor(A.class)
-                .using(makePicoContainer(CDI(), annotatedMethodInjection(A.Foobarred.class)))
+                .using(makePicoContainer(CDI(), new AnnotatedMethodInjection(false, A.Foobarred.class)))
                 .make();
 
         assertTheseHappenedInOrder(
