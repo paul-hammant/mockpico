@@ -28,6 +28,7 @@ import org.picocontainer.InjectionType;
 import org.picocontainer.MutablePicoContainer;
 import org.picocontainer.PicoContainer;
 import org.picocontainer.adapters.InstanceAdapter;
+import org.picocontainer.annotations.Inject;
 import org.picocontainer.behaviors.Caching;
 import org.picocontainer.containers.EmptyPicoContainer;
 import org.picocontainer.injectors.AnnotatedFieldInjection;
@@ -39,16 +40,21 @@ import org.picocontainer.monitors.NullComponentMonitor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.picocontainer.injectors.Injectors.CDI;
 import static org.picocontainer.injectors.Injectors.SDI;
 
 public class Mockpico {
 
-    public static final Class<? extends Annotation> PICO_ATINJECT = org.picocontainer.annotations.Inject.class;
     public static final Class<? extends Annotation> JSR330_ATINJECT = getInjectionAnnotation("javax.inject.Inject");
     public static final Class<? extends Annotation> AUTOWIRED = getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired");
+    private static final InjectionType[] DEFAULT_INJECTION_TYPES = new InjectionType[] {CDI(), new AnnotatedFieldInjection(Inject.class, JSR330_ATINJECT, AUTOWIRED),
+            new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, AUTOWIRED)};
 
     public static <T> ContainerToDo<T> mockDepsFor(Class<T> type) {
         return new ContainerToDo<T>(type);
@@ -107,13 +113,13 @@ public class Mockpico {
     }
 
     public static class InjecteesToDo<T> extends MakeToDo<T> {
+
         public InjecteesToDo(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
             super(type, mocks, injectees);
         }
 
         public InjecteesToDo(Class<T> type) {
-            super(type, makePicoContainer(CDI(), new AnnotatedFieldInjection(PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED),
-                    new AnnotatedMethodInjection(false, PICO_ATINJECT, JSR330_ATINJECT, AUTOWIRED)), new Object[0]);
+            super(type, makePicoContainer(DEFAULT_INJECTION_TYPES), new Object[0]);
         }
 
         public MakeToDo<T> withInjectees(Object... injectees) {
@@ -136,7 +142,9 @@ public class Mockpico {
         }
 
         public InjecteesToDo<T> withSetters() {
-            return using(makePicoContainer(CDI(), SDI()));
+            List<InjectionType> injectionTypes = new ArrayList<InjectionType>(Arrays.asList(DEFAULT_INJECTION_TYPES));
+            injectionTypes.add(SDI());
+            return using(makePicoContainer(injectionTypes.toArray(new InjectionType[injectionTypes.size()])));
         }
     }
 
@@ -145,7 +153,7 @@ public class Mockpico {
     }
 
     public static MutablePicoContainer makePicoContainer(PicoContainer parent) {
-        return makePicoContainer(parent, CDI(), SDI());
+        return makePicoContainer(parent, DEFAULT_INJECTION_TYPES);
     }
 
     public static MutablePicoContainer makePicoContainer(InjectionType... injectionFactories) {
@@ -194,10 +202,10 @@ public class Mockpico {
         }
 
         @Override
-        public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance, long duration, Object[] args, Object retVal) {
+        public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance, long duration, Object retVal, Object... args) {
             Journal journal = pico.getComponent(Journal.class);
-            super.invoked(pico, componentAdapter, member, instance, duration, args, retVal);
-            journal.log("Method being injected: '" + member.getName() + "' with: " + args[0]);
+            super.invoked(pico, componentAdapter, member, instance, duration, retVal, args);
+            journal.log((member instanceof Method ? "Method" : "Field") + " being injected: '" + member.getName() + "' with: " + args[0]);
         }
 
         @Override

@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.exceptions.verification.NoInteractionsWanted;
 import org.picocontainer.MutablePicoContainer;
+import org.picocontainer.injectors.AnnotatedFieldInjection;
 import org.picocontainer.injectors.AnnotatedMethodInjection;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -47,6 +48,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.picocontainer.injectors.Injectors.CDI;
+import static org.picocontainer.injectors.Injectors.SDI;
 
 public class MockpicoTestCase {
 
@@ -58,7 +60,7 @@ public class MockpicoTestCase {
     public void testCanMockConstructorAndSetterDepsWhenNotInjected() {
 
         A a = mockDepsFor(A.class)
-                .withSetters()
+                .using(makePicoContainer(CDI(), SDI()))
                 .make();
 
         assertTheseHappenedInOrder(
@@ -71,7 +73,7 @@ public class MockpicoTestCase {
     public void testCanUseRealConstructorAndSetterDepsWhenInjected() {
 
         A a = mockDepsFor(A.class)
-                .withSetters()
+                .using(makePicoContainer(CDI(), SDI()))
                 .withInjectees(b, c, d)
                 .make();
 
@@ -85,7 +87,7 @@ public class MockpicoTestCase {
     public void testPicoCanMakeFromTypesAndCacheDeps() {
 
         A a = mockDepsFor(A.class)
-                .withSetters()
+                .using(makePicoContainer(CDI(), SDI()))
                 .withInjectees(B.class, C.class, D.class)
                 .make();
 
@@ -112,6 +114,24 @@ public class MockpicoTestCase {
     }
 
     @Test
+    public void testSettersCanBeAddedBackToDefault() {
+
+        A a = mockDepsFor(A.class)
+                .withSetters()
+                .withInjectees(b, c, d)
+                .make();
+
+        assertTheseHappenedInOrder(
+                aMadeWith(memberVarsCandB()),
+                atInjectMethodCalledWith(memberVarB()),
+                autowiredMethodCalledWith(memberVarB()),
+                setterCalledWith(memberVarD()),
+                autowiredFieldSetTo(memberVarB()),
+                atInjectFieldSetTo(memberVarB())
+        ).to(a);
+    }
+
+    @Test
     public void testCanSpecifyConstructorInjectionOnly() {
 
         A a = mockDepsFor(A.class)
@@ -126,7 +146,7 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanUseAPicoContainerHandedInAndJournalInjectionsToSpecialObject() {
-        MutablePicoContainer pico = makePicoContainer();
+        MutablePicoContainer pico = makePicoContainer(CDI(), SDI(), new AnnotatedFieldInjection(Inject.class, Mockpico.JSR330_ATINJECT, Mockpico.AUTOWIRED));
 
         A a = mockDepsFor(A.class)
                 .using(pico)
@@ -134,7 +154,10 @@ public class MockpicoTestCase {
 
         assertTheseHappenedInOrder(
                 aMadeWith(mockCandB()),
-                setterCalledWith(mockD())
+                setterCalledWith(mockD()),
+                autowiredFieldSetTo(mockB()),
+                atInjectFieldSetTo(mockB())
+                
         ).to(a);
 
         String actual = pico.getComponent(Mockpico.Journal.class).toString();
@@ -142,6 +165,8 @@ public class MockpicoTestCase {
         assertTrue(actual.indexOf("  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: ") > 0);
         assertTrue(actual.indexOf("  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: ") > 0);
         assertTrue(actual.indexOf("Method being injected: 'setIt' with: Mock for D, hashCode: ") > 0);
+        assertTrue(actual.indexOf("Field being injected: 'b1' with: Mock for B, hashCode: ") > 0);
+        assertTrue(actual.indexOf("Field being injected: 'b2' with: Mock for B, hashCode: ") > 0);
     }
 
     @Test
@@ -421,7 +446,8 @@ public class MockpicoTestCase {
         }
 
         public void to(A a) {
-            assertEquals(whatShouldHaveHappened, a.toString());
+            String whatActuallyHappened = a.toString();
+            assertEquals(whatShouldHaveHappened, whatActuallyHappened);
         }
     }
 
