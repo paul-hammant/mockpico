@@ -84,6 +84,7 @@ public class Mockpico {
         protected final Class<T> type;
         protected final MutablePicoContainer mocks;
         protected final Object[] injectees;
+        protected StringBuilder journal = new StringBuilder();
 
         public MakeToDo(Class<T> type) {
             this(type, makePicoContainer(), new Object[0]);
@@ -94,8 +95,13 @@ public class Mockpico {
             this.injectees = injectees;
         }
 
+        public MakeToDo<T> journalTo(StringBuilder journal) {
+            this.journal = journal;
+            return this;
+        }
+
         public T make() {
-            mocks.addComponent(new Journal());
+            mocks.changeMonitor(new MockitoComponentMonitor(journal));
             for (Object extra : injectees) {
                 String s = extra.getClass().getName();
                 if (s.indexOf("ByMockito") > -1) {
@@ -161,7 +167,7 @@ public class Mockpico {
     }
 
     public static MutablePicoContainer makePicoContainer(PicoContainer parent, InjectionType... injectionFactories) {
-        return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new MockitoComponentMonitor(), new Caching().wrap(new CompositeInjection(injectionFactories)));
+        return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new NullComponentMonitor(), new Caching().wrap(new CompositeInjection(injectionFactories)));
     }
 
 
@@ -174,25 +180,20 @@ public class Mockpico {
         }
     }
 
-    public static class Journal {
-        private StringBuilder builder = new StringBuilder();
-        public void log(String line) {
-            builder.append(line).append("\n");
-        }
-        @Override
-        public String toString() {
-            return builder.toString();
-        }
-    }
-
     private static class MockitoComponentMonitor extends NullComponentMonitor {
+
+        StringBuilder journal;
+
+        private MockitoComponentMonitor(StringBuilder journal) {
+            this.journal = journal;
+        }
+
         @Override
         public <T> void instantiated(PicoContainer pico, ComponentAdapter<T> componentAdapter, Constructor<T> constructor, Object instantiated, Object[] injected, long duration) {
-            Journal journal = pico.getComponent(Journal.class);
-            journal.log("Constructor being injected:");
+            journal.append("Constructor being injected:\n");
             super.instantiated(pico, componentAdapter, constructor, instantiated, injected, duration);
             for (int i = 0; i < injected.length; i++) {
-                journal.log("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: " + injected[i].toString());
+                journal.append("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: " + injected[i].toString() + "\n");
             }
         }
 
@@ -203,9 +204,8 @@ public class Mockpico {
 
         @Override
         public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance, long duration, Object retVal, Object... args) {
-            Journal journal = pico.getComponent(Journal.class);
             super.invoked(pico, componentAdapter, member, instance, duration, retVal, args);
-            journal.log((member instanceof Method ? "Method" : "Field") + " being injected: '" + member.getName() + "' with: " + args[0]);
+            journal.append((member instanceof Method ? "Method" : "Field") + " being injected: '" + member.getName() + "' with: " + args[0]).append("\n");
         }
 
         @Override
