@@ -1,11 +1,13 @@
 Mockpico helps test components with many injectable dependencies. If some or most of those dependencies are unimportant to the actual behavior you are trying to assert, then Mockpico can make the setup easier.
 
-Simple Example
---------------
+A Simple Example
+----------------
 
 Here is a simple example. Say FooController has a dozen dependencies injected in through the constructor, setters and appropriately annotated fields, but you just don’t care about most of the deps, the Mockpico can automatically inject mocks for them:
 
-> FooController fc = mockDepsFor(FooController.class).withInjectees(b, c, d).make();
+> FooController fc = mockDepsFor(FooController.class).withInjectees(a, b, c, d).make();
+
+The injectees above could be real components, or Mockito mocks (your choice).  They can be specified in any order as PicoContainer will just work the right order.  Dependencies not specified will be mocked automatically.
 
 Understands a few Dependency Injection (DI) Technologies
 --------------------------------------------------------

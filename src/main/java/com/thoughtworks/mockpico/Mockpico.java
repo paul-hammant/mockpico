@@ -52,9 +52,12 @@ import static org.picocontainer.injectors.Injectors.SDI;
 public class Mockpico {
 
     public static final Class<? extends Annotation> JSR330_ATINJECT = getInjectionAnnotation("javax.inject.Inject");
-    public static final Class<? extends Annotation> AUTOWIRED = getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired");
-    private static final InjectionType[] DEFAULT_INJECTION_TYPES = new InjectionType[] {CDI(), new AnnotatedFieldInjection(Inject.class, JSR330_ATINJECT, AUTOWIRED),
-            new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, AUTOWIRED)};
+    public static final Class<? extends Annotation> GUICE_ATINJECT = getInjectionAnnotation("com.google.Inject");
+    public static final Class<? extends Annotation> SPRING_AUTOWIRED = getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired");
+
+    private static final InjectionType[] DEFAULT_INJECTION_TYPES = new InjectionType[] {CDI(),
+            new AnnotatedFieldInjection(Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT),
+            new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT)};
 
     public static <T> ContainerToDo<T> mockDepsFor(Class<T> type) {
         return new ContainerToDo<T>(type);
@@ -89,6 +92,7 @@ public class Mockpico {
         public MakeToDo(Class<T> type) {
             this(type, makePicoContainer(), new Object[0]);
         }
+
         public MakeToDo(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
             this.type = type;
             this.mocks = mocks;
@@ -167,7 +171,8 @@ public class Mockpico {
     }
 
     public static MutablePicoContainer makePicoContainer(PicoContainer parent, InjectionType... injectionFactories) {
-        return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new NullComponentMonitor(), new Caching().wrap(new CompositeInjection(injectionFactories)));
+        return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new NullComponentMonitor(),
+                new Caching().wrap(new CompositeInjection(injectionFactories)));
     }
 
 
@@ -182,30 +187,35 @@ public class Mockpico {
 
     private static class MockitoComponentMonitor extends NullComponentMonitor {
 
-        StringBuilder journal;
+        private final StringBuilder journal;
 
         private MockitoComponentMonitor(StringBuilder journal) {
             this.journal = journal;
         }
 
         @Override
-        public <T> void instantiated(PicoContainer pico, ComponentAdapter<T> componentAdapter, Constructor<T> constructor, Object instantiated, Object[] injected, long duration) {
+        public <T> void instantiated(PicoContainer pico, ComponentAdapter<T> componentAdapter, Constructor<T> constructor,
+                                     Object instantiated, Object[] injected, long duration) {
             journal.append("Constructor being injected:\n");
             super.instantiated(pico, componentAdapter, constructor, instantiated, injected, duration);
             for (int i = 0; i < injected.length; i++) {
-                journal.append("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: " + injected[i].toString() + "\n");
+                journal.append("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: "
+                        + injected[i].toString() + "\n");
             }
         }
 
         @Override
-        public <T> void instantiationFailed(PicoContainer container, ComponentAdapter<T> componentAdapter, Constructor<T> constructor, Exception e) {
+        public <T> void instantiationFailed(PicoContainer container, ComponentAdapter<T> componentAdapter,
+                                            Constructor<T> constructor, Exception e) {
             super.instantiationFailed(container, componentAdapter, constructor, e);    
         }
 
         @Override
-        public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance, long duration, Object retVal, Object... args) {
+        public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance,
+                            long duration, Object retVal, Object... args) {
             super.invoked(pico, componentAdapter, member, instance, duration, retVal, args);
-            journal.append((member instanceof Method ? "Method" : "Field") + " being injected: '" + member.getName() + "' with: " + args[0]).append("\n");
+            journal.append((member instanceof Method ? "Method" : "Field") + " being injected: '" + member.getName()
+                    + "' with: " + args[0]).append("\n");
         }
 
         @Override
@@ -213,21 +223,21 @@ public class Mockpico {
             if (classToMock instanceof Class) {
                 if (classToMock == Integer.class) {
                     return 0;
-                } else if (classToMock == Long.class){
+                } else if (classToMock == Long.class) {
                     return (long) 0;
-                } else if (classToMock == Double.class){
+                } else if (classToMock == Double.class) {
                     return (double) 0;
-                } else if (classToMock == Byte.class){
+                } else if (classToMock == Byte.class) {
                     return (byte) 0;
-                } else if (classToMock == Short.class){
+                } else if (classToMock == Short.class) {
                     return (short) 0;
-                } else if (classToMock == Float.class){
+                } else if (classToMock == Float.class) {
                     return (float) 0;
-                } else if (classToMock == Boolean.class){
+                } else if (classToMock == Boolean.class) {
                     return false;
-                } else if (classToMock == Character.class){
+                } else if (classToMock == Character.class) {
                     return (char) 0;
-                } else if (classToMock == String.class){
+                } else if (classToMock == String.class) {
                     return "";
                 } else {
                     Object mocked = Mockito.mock((Class) classToMock);

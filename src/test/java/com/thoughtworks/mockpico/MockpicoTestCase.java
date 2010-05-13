@@ -146,7 +146,7 @@ public class MockpicoTestCase {
 
     @Test
     public void testCanUseAPicoContainerHandedInAndJournalInjectionsToSpecialObject() {
-        MutablePicoContainer pico = makePicoContainer(CDI(), SDI(), new AnnotatedFieldInjection(Inject.class, Mockpico.JSR330_ATINJECT, Mockpico.AUTOWIRED));
+        MutablePicoContainer pico = makePicoContainer(CDI(), SDI(), new AnnotatedFieldInjection(Inject.class, Mockpico.JSR330_ATINJECT, Mockpico.SPRING_AUTOWIRED));
 
         StringBuilder journal = new StringBuilder();
         A a = mockDepsFor(A.class)
