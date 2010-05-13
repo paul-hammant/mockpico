@@ -9,8 +9,8 @@ Here is a simple example. Say FooController has a dozen dependencies injected in
 The setter methods or fields to inject into were annotated with Spring’s @Autowired or @Inject from JSR330. The three variables in this case are injected into where there dependent types are declared for FooController. Each of the three could be Mocks made by Mockito, or real or stub implementations as you see fit.
 
 Here is a full test case showing Mockpico in use :- 
-[MockpicoTestCase.java](blob/master/src/test/java/com/thoughtworks/mockpico/MockpicoTestCase.java).
+[MockpicoTestCase.java](mockpico/blob/master/src/test/java/com/thoughtworks/mockpico/MockpicoTestCase.java).
 
 However, there’s a word of warning :-
 
-![alt injection diagram](raw/master/src/graffle/injection-diag.png "Collaborators Are Better")
+![alt injection diagram](mockpico/raw/master/src/graffle/injection-diag.png "Collaborators Are Better")
