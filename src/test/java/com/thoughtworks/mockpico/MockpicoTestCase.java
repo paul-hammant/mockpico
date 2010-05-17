@@ -57,7 +57,7 @@ public class MockpicoTestCase {
     private static B b = new B(c);
 
     @Test
-    public void testCanMockConstructorAndSetterDepsWhenNotInjected() {
+    public void canSpecifyCustomInjectionTypes() {
 
         A a = mockDepsFor(A.class)
                 .using(makePicoContainer(CDI(), SDI()))
@@ -70,11 +70,11 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanUseRealConstructorAndSetterDepsWhenInjected() {
+    public void canLeverageRealInjecteesForCustomInjectionTypes() {
 
         A a = mockDepsFor(A.class)
                 .using(makePicoContainer(CDI(), SDI()))
-                .withInjectees(b, c, d)
+                .withInjectees(b, c, d) // b, c and d are real
                 .make();
 
         assertTheseHappenedInOrder(
@@ -84,7 +84,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testPicoCanMakeFromTypesAndCacheDeps() {
+    public void canSpecifyTypesForPicoToMakeIntoInstancesForInjection() {
 
         A a = mockDepsFor(A.class)
                 .using(makePicoContainer(CDI(), SDI()))
@@ -98,7 +98,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanSetterInjectionIsNotDefault() {
+    public void defaultsAreConstructorAnnotatedFieldAndMethodInjectionWithSuppliedInjectees() {
 
         A a = mockDepsFor(A.class)
                 .withInjectees(b, c)
@@ -114,7 +114,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testSettersCanBeAddedBackToDefault() {
+    public void settersCanBeAddedToDefaultInjectionTypes() {
 
         A a = mockDepsFor(A.class)
                 .withSetters()
@@ -131,22 +131,11 @@ public class MockpicoTestCase {
         ).to(a);
     }
 
-    @Test
-    public void testCanSpecifyConstructorInjectionOnly() {
-
-        A a = mockDepsFor(A.class)
-                .withInjectionTypes(CDI())
-                .withInjectees(b, c, d)
-                .make();
-
-        assertTheseHappenedInOrder(
-                aMadeWith(memberVarsCandB())
-        ).to(a);
-    }
 
     @Test
-    public void testCanUseAPicoContainerHandedInAndJournalInjectionsToSpecialObject() {
-        MutablePicoContainer pico = makePicoContainer(CDI(), SDI(), new AnnotatedFieldInjection(Inject.class, Mockpico.JSR330_ATINJECT, Mockpico.SPRING_AUTOWIRED));
+    public void canUseAPicoContainerHandedInAndJournalInjectionsToSpecialObject() {
+        MutablePicoContainer pico = makePicoContainer(CDI(), SDI(),
+                new AnnotatedFieldInjection(Inject.class, Mockpico.JSR330_ATINJECT, Mockpico.SPRING_AUTOWIRED));
 
         StringBuilder journal = new StringBuilder();
         A a = mockDepsFor(A.class)
@@ -171,10 +160,9 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanMockConstructorAndDefaultInjecteesWhenNotSupplied() {
+    public void defaultsAreConstructorAnnotatedFieldAndMethodInjectionAndMockitoSuppliesInjectees() {
 
-        A a = mockDepsFor(A.class)
-                .make();
+        A a = mockDepsFor(A.class).make();
 
         assertTheseHappenedInOrder(
                 aMadeWith(mockCandB()),
@@ -186,7 +174,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanUseMocksPassedIn() {
+    public void mockitoMocksCanBePassedIn() {
         List list1 = mock(List.class);
 
         NeedsList nl = mockDepsFor(NeedsList.class)
@@ -197,7 +185,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void testCanMockPrimivitesAndAlsoUseCustomAnnotation() {
+    public void canMockPrimivitesAndAlsoUseCustomAnnotationInjectionType() {
 
         A a = mockDepsFor(A.class)
                 .using(makePicoContainer(CDI(), new AnnotatedMethodInjection(false, A.Foobarred.class)))
@@ -210,7 +198,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void verifyNoMoreInteractionsCanBePercolated() {
+    public void mocksUsedCanReceiveVerifyNoMoreInteractions() {
         MutablePicoContainer mocks = makePicoContainer();
 
         NeedsList nl = mockDepsFor(NeedsList.class)
@@ -227,7 +215,7 @@ public class MockpicoTestCase {
     }
 
     @Test
-    public void resetCanBePercolated() {
+    public void mocksUsedCanReceiveReset() {
         MutablePicoContainer mocks = makePicoContainer();
 
         NeedsList nl = mockDepsFor(NeedsList.class)
@@ -240,9 +228,9 @@ public class MockpicoTestCase {
     }
 
     public static class NeedsList {
-        private List list;
+        private List<Object> list;
 
-        public NeedsList(List list) {
+        public NeedsList(List<Object> list) {
             this.list = list;
         }
 
