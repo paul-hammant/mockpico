@@ -87,7 +87,7 @@ public class Mockpico {
         protected final Class<T> type;
         protected final MutablePicoContainer mocks;
         protected final Object[] injectees;
-        protected StringBuilder journal = new StringBuilder();
+        protected Journal journal = new Journal();
 
         public MakeToDo(Class<T> type) {
             this(type, makePicoContainer(), new Object[0]);
@@ -99,7 +99,7 @@ public class Mockpico {
             this.injectees = injectees;
         }
 
-        public MakeToDo<T> journalTo(StringBuilder journal) {
+        public MakeToDo<T> journalTo(Journal journal) {
             this.journal = journal;
             return this;
         }
@@ -187,9 +187,9 @@ public class Mockpico {
 
     private static class MockitoComponentMonitor extends NullComponentMonitor {
 
-        private final StringBuilder journal;
+        private final Journal journal;
 
-        private MockitoComponentMonitor(StringBuilder journal) {
+        private MockitoComponentMonitor(Journal journal) {
             this.journal = journal;
         }
 
@@ -199,8 +199,9 @@ public class Mockpico {
             journal.append("Constructor being injected:\n");
             super.instantiated(pico, componentAdapter, constructor, instantiated, injected, duration);
             for (int i = 0; i < injected.length; i++) {
-                journal.append("  arg[" + i + "] type:" + constructor.getParameterTypes()[i] + ", with: "
-                        + injected[i].toString() + "\n");
+                Class<?> aClass = constructor.getParameterTypes()[i];
+                Object o = injected[i];
+                journal.append(new Journal.CtorArg(i, aClass, o));
             }
         }
 
@@ -214,8 +215,11 @@ public class Mockpico {
         public void invoked(PicoContainer pico, ComponentAdapter<?> componentAdapter, Member member, Object instance,
                             long duration, Object retVal, Object... args) {
             super.invoked(pico, componentAdapter, member, instance, duration, retVal, args);
-            journal.append((member instanceof Method ? "Method" : "Field") + " being injected: '" + member.getName()
-                    + "' with: " + args[0]).append("\n");
+            if (member instanceof Method) {
+                journal.append(new Journal.Method(member, args[0]));
+            } else {
+                journal.append(new Journal.Field(member, args[0]));
+            }
         }
 
         @Override
@@ -247,5 +251,7 @@ public class Mockpico {
             }
             return null;
         }
+
+
     }
 }

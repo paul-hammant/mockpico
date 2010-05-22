@@ -137,7 +137,7 @@ public class MockpicoTestCase {
         MutablePicoContainer pico = makePicoContainer(CDI(), SDI(),
                 new AnnotatedFieldInjection(Inject.class, Mockpico.JSR330_ATINJECT, Mockpico.SPRING_AUTOWIRED));
 
-        StringBuilder journal = new StringBuilder();
+        Journal journal = new Journal();
         A a = mockDepsFor(A.class)
                 .using(pico)
                 .journalTo(journal)
@@ -151,12 +151,13 @@ public class MockpicoTestCase {
                 
         ).to(a);
 
-        assertTrue(journal.indexOf("Constructor being injected:") > -1);
-        assertTrue(journal.indexOf("  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: ") > 0);
-        assertTrue(journal.indexOf("  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: ") > 0);
-        assertTrue(journal.indexOf("Method being injected: 'setIt' with: Mock for D, hashCode: ") > 0);
-        assertTrue(journal.indexOf("Field being injected: 'b1' with: Mock for B, hashCode: ") > 0);
-        assertTrue(journal.indexOf("Field being injected: 'b2' with: Mock for B, hashCode: ") > 0);
+        String txt = journal.toString();
+        assertTrue(txt.indexOf("Constructor being injected:") > -1);
+        assertTrue(txt.indexOf("  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: ") > 0);
+        assertTrue(txt.indexOf("  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: ") > 0);
+        assertTrue(txt.indexOf("Method being injected: 'setIt' with: Mock for D, hashCode: ") > 0);
+        assertTrue(txt.indexOf("Field being injected: 'b1' with: Mock for B, hashCode: ") > 0);
+        assertTrue(txt.indexOf("Field being injected: 'b2' with: Mock for B, hashCode: ") > 0);
     }
 
     @Test
