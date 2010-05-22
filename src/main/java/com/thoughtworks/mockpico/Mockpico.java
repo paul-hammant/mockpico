@@ -105,7 +105,7 @@ public class Mockpico {
         }
 
         public T make() {
-            mocks.changeMonitor(new MockitoComponentMonitor(journal));
+            mocks.changeMonitor(new MockpicoComponentMonitor(journal));
             for (Object extra : injectees) {
                 String s = extra.getClass().getName();
                 if (s.indexOf("ByMockito") > -1) {
@@ -185,11 +185,11 @@ public class Mockpico {
         }
     }
 
-    private static class MockitoComponentMonitor extends NullComponentMonitor {
+    private static class MockpicoComponentMonitor extends NullComponentMonitor {
 
         private final Journal journal;
 
-        private MockitoComponentMonitor(Journal journal) {
+        private MockpicoComponentMonitor(Journal journal) {
             this.journal = journal;
         }
 
@@ -199,9 +199,7 @@ public class Mockpico {
             journal.append("Constructor being injected:\n");
             super.instantiated(pico, componentAdapter, constructor, instantiated, injected, duration);
             for (int i = 0; i < injected.length; i++) {
-                Class<?> aClass = constructor.getParameterTypes()[i];
-                Object o = injected[i];
-                journal.append(new Journal.CtorArg(i, aClass, o));
+                journal.append(new Journal.Arg(i, constructor.getParameterTypes()[i], injected[i]));
             }
         }
 
@@ -216,7 +214,11 @@ public class Mockpico {
                             long duration, Object retVal, Object... args) {
             super.invoked(pico, componentAdapter, member, instance, duration, retVal, args);
             if (member instanceof Method) {
-                journal.append(new Journal.Method(member, args[0]));
+                Method method = (Method) member;
+                journal.append("Method '" + method.getName() + "' being injected: \n");
+                for (int i = 0; i < args.length; i++) {
+                    journal.append(new Journal.Arg(i, method.getParameterTypes()[i], args[i]));
+                }
             } else {
                 journal.append(new Journal.Field(member, args[0]));
             }

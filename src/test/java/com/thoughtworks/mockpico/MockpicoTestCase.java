@@ -35,9 +35,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.sun.tools.internal.ws.wsdl.parser.Util.fail;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
@@ -45,7 +48,6 @@ import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
 import static com.thoughtworks.mockpico.Mockpico.resetAll;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.picocontainer.injectors.Injectors.CDI;
 import static org.picocontainer.injectors.Injectors.SDI;
@@ -131,7 +133,6 @@ public class MockpicoTestCase {
         ).to(a);
     }
 
-
     @Test
     public void canUseAPicoContainerHandedInAndJournalInjectionsToSpecialObject() {
         MutablePicoContainer pico = makePicoContainer(CDI(), SDI(),
@@ -151,13 +152,16 @@ public class MockpicoTestCase {
                 
         ).to(a);
 
-        String txt = journal.toString();
-        assertTrue(txt.indexOf("Constructor being injected:") > -1);
-        assertTrue(txt.indexOf("  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: ") > 0);
-        assertTrue(txt.indexOf("  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: ") > 0);
-        assertTrue(txt.indexOf("Method being injected: 'setIt' with: Mock for D, hashCode: ") > 0);
-        assertTrue(txt.indexOf("Field being injected: 'b1' with: Mock for B, hashCode: ") > 0);
-        assertTrue(txt.indexOf("Field being injected: 'b2' with: Mock for B, hashCode: ") > 0);
+
+        String journalString = removeHashCodesSoThatStringMatchingCanWork(journal);
+
+        assertEquals("Constructor being injected:\n" +
+                "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: <HC#0>\n" +
+                "  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: <HC#1>\n" +
+                "Method 'setIt' being injected: \n" +
+                "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$D, with: Mock for D, hashCode: <HC#2>\n" +
+                "Field being injected: 'b1' with: Mock for B, hashCode: <HC#1>\n" +
+                "Field being injected: 'b2' with: Mock for B, hashCode: <HC#1>\n", journalString);
     }
 
     @Test
@@ -188,14 +192,48 @@ public class MockpicoTestCase {
     @Test
     public void canMockPrimivitesAndAlsoUseCustomAnnotationInjectionType() {
 
+        Journal journal = new Journal();
         A a = mockDepsFor(A.class)
                 .using(makePicoContainer(CDI(), new AnnotatedMethodInjection(false, A.Foobarred.class)))
+                .journalTo(journal)
                 .make();
 
         assertTheseHappenedInOrder(
                 aMadeWith(mockCandB()),
                 customAnnotatedMethodCalledWith(aBunchOfPrimitives())
         ).to(a);
+
+        String journalString = removeHashCodesSoThatStringMatchingCanWork(journal);
+
+        assertEquals("Constructor being injected:\n" +
+                "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: <HC#0>\n" +
+                "  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: <HC#1>\n" +
+                "Method 'foobar' being injected: \n" +
+                "  arg[0] type:class java.lang.String, with: \n" +
+                "  arg[1] type:int, with: 0\n" +
+                "  arg[2] type:double, with: 0.0\n" +
+                "  arg[3] type:class java.lang.Double, with: 0.0\n" +
+                "  arg[4] type:boolean, with: false\n" +
+                "  arg[5] type:float, with: 0.0\n" +
+                "  arg[6] type:byte, with: 0\n" +
+                "  arg[7] type:short, with: 0\n" +
+                "  arg[8] type:class java.math.BigInteger, with: Mock for BigInteger, hashCode: <HC#2>\n" +
+                "  arg[9] type:char, with: \u0000\n" +
+                "  arg[10] type:class java.lang.Long, with: 0\n", journalString);
+    }
+
+    private String removeHashCodesSoThatStringMatchingCanWork(Journal journal) {
+        Pattern nineOrMoreDigits = Pattern.compile("\\d{9,}");
+        List<String> hashes = new ArrayList<String>();
+        Matcher matcher = nineOrMoreDigits.matcher(journal.toString());
+        while (matcher.find()) {
+            hashes.add(matcher.group());
+        }
+        String retVal = journal.toString();
+        for (int i = 0; i < hashes.size(); i++) {
+            retVal = retVal.replace(hashes.get(i), "<HC#" + i + ">");
+        }
+        return retVal;
     }
 
     @Test

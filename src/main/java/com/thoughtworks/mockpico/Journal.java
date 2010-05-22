@@ -33,12 +33,12 @@ public class Journal {
         things.add(thing);
     }
 
-    static class CtorArg {
+    static class Arg {
         private final int i;
         private final Class<?> type;
         private final Object o;
 
-        public CtorArg(int i, Class<?> type, Object o) {
+        public Arg(int i, Class<?> type, Object o) {
             this.i = i;
             this.type = type;
             this.o = o;
@@ -47,21 +47,9 @@ public class Journal {
         public String toString() {
             return "  arg[" + i + "] type:" + type + ", with: " + o.toString() + "\n";
         }
-    }
-    static class Method {
-        private final Member member;
-        private final Object arg;
 
-        public Method(Member member, Object arg) {
-            this.member = member;
-            this.arg = arg;
-        }
-
-        @Override
-        public String toString() {
-            return "Method being injected: '" + member.getName() + "' with: " + arg + "\n";
-        }
     }
+
     static class Field {
         private final Member member;
         private final Object arg;
