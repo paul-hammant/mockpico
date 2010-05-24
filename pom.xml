@@ -67,4 +67,17 @@
             </plugins>
         </pluginManagement>
     </build>
+    <developers>
+	    <developer>
+			<id>paul-hammant</id>
+			      <name>Paul Hammant</name>
+			      <email>paul@hammant.org</email>
+			      <url>http://paulhammant.com</url>
+			      <roles>
+			        <role>architect</role>
+			        <role>developer</role>
+			      </roles>
+			      <timezone>-6</timezone>    	
+     	</developer>
+    </developers>
 </project>
