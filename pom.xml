@@ -6,6 +6,7 @@
     <version>1.0-SNAPSHOT</version>
     <name>Mockpico</name>
     <packaging>jar</packaging>
+    <description>Mockito and PicoContainer used together to instantiate Controller classes.</description>
     <dependencies>
         <dependency>
             <groupId>org.picocontainer</groupId>
