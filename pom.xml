@@ -14,7 +14,11 @@
 	    <url>http://www.opensource.org/licenses/bsd-license.php</url>
 	  </license>
 	</licenses>
-    <dependencies>
+	<scm>
+	    <connection>scm:git:git://github.com/paul-hammant/mockpico.git</connection>
+	    <developerConnection>scm:git:git@github.com:paul-hammant/mockpico.git</developerConnection>
+	 </scm>    
+	<dependencies>
         <dependency>
             <groupId>org.picocontainer</groupId>
             <artifactId>picocontainer</artifactId>
