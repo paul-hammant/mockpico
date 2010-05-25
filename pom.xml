@@ -17,6 +17,7 @@
 	<scm>
 	    <connection>scm:git:git://github.com/paul-hammant/mockpico.git</connection>
 	    <developerConnection>scm:git:git@github.com:paul-hammant/mockpico.git</developerConnection>
+	    <url>https://paul-hammant@github.com/paul-hammant/mockpico.git</url>
 	 </scm>    
 	<dependencies>
         <dependency>
