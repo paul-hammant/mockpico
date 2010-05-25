@@ -8,6 +8,12 @@
     <packaging>jar</packaging>
     <description>Mockito and PicoContainer used together to instantiate Controller classes.</description>
     <url>http://github.com/paul-hammant/mockpico</url>
+	<licenses>
+	  <license>
+	    <name>BSD</name>
+	    <url>http://www.opensource.org/licenses/bsd-license.php</url>
+	  </license>
+	</licenses>
     <dependencies>
         <dependency>
             <groupId>org.picocontainer</groupId>
