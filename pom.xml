@@ -7,6 +7,7 @@
     <name>Mockpico</name>
     <packaging>jar</packaging>
     <description>Mockito and PicoContainer used together to instantiate Controller classes.</description>
+    <url>http://github.com/paul-hammant/mockpico</url>
     <dependencies>
         <dependency>
             <groupId>org.picocontainer</groupId>
