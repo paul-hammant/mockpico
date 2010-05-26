@@ -1,7 +1,7 @@
 What is Mockpico?
 =================
 
-Mockpico helps test components with many injectable dependencies. If some or most of those dependencies are unimportant to the actual behavior you are trying to assert, then Mockpico can make the setup easier.
+Mockpico helps test components with many injectable dependencies. If some or most of those dependencies are unimportant to the actual behavior you are trying to test, then Mockpico makes the setup easier.
 
 A Simple Example
 ----------------
@@ -15,7 +15,7 @@ The injectees above could be real components, or Mockito mocks (your choice).  T
 Understands a few Dependency Injection (DI) technologies
 --------------------------------------------------------
 
-The setter methods or fields to inject into were annotated with Spring’s @Autowired or @Inject from JSR330, Guice or PicoContainer. The three variables in this case are injected into where there dependent types are declared for FooController. Each of the three could be Mocks made by Mockito, or real or stub implementations as you see fit.
+The setter methods or fields to inject into were annotated with Spring’s @Autowired or @Inject from JSR330, Guice or PicoContainer. The four variables in this case (a, b, c, d) are injected into where the applicable injection-points as declared for FooController. Each of the four could be Mocks made by Mockito, or real or stub implementations as you see fit.
 
 Here is a full test case showing a number of permutations of Mockpico in use:
 [MockpicoTestCase.java](mockpico/blob/master/src/test/java/com/thoughtworks/mockpico/MockpicoTestCase.java).
@@ -26,3 +26,8 @@ Do you have too many injected dependencies?
 A word of warning, to folks embracing DI more than decomposition:
 
 ![alt injection diagram](mockpico/raw/master/src/graffle/injection-diag.png "Collaborators Are Better")
+
+Where Mockpico facilitates good work
+------------------------------------
+
+If your ripple through your testbase getting rid of the use of controller's constructors, then you are able to change the types of injection easily. This is because the change only affects a single controller at a time, as the tests no longer directly manipulate constructors, setters of injectable fields.
