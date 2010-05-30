@@ -59,8 +59,8 @@ public class Mockpico {
             new AnnotatedFieldInjection(Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT),
             new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT)};
 
-    public static <T> ContainerToDo<T> mockDepsFor(Class<T> type) {
-        return new ContainerToDo<T>(type);
+    public static <T> ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext<T> mockDepsFor(Class<T> type) {
+        return new ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext<T>(type);
     }
 
     public static void verifyNoMoreInteractionsForAll(PicoContainer mocks) {
@@ -83,78 +83,76 @@ public class Mockpico {
         }
     }
 
-    public static class MakeToDo<T> {
+    public static class JournalOrMakeNext<T> {
+
         protected final Class<T> type;
         protected final MutablePicoContainer mocks;
         protected final Object[] injectees;
         protected Journal journal = new Journal();
 
-        public MakeToDo(Class<T> type) {
-            this(type, makePicoContainer(), new Object[0]);
-        }
-
-        public MakeToDo(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
+        private JournalOrMakeNext(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
             this.type = type;
             this.mocks = mocks;
             this.injectees = injectees;
         }
 
-        public MakeToDo<T> journalTo(Journal journal) {
+        public JournalOrMakeNext<T> journalTo(Journal journal) {
             this.journal = journal;
             return this;
         }
 
         public T make() {
             mocks.changeMonitor(new MockpicoComponentMonitor(journal));
-            for (Object extra : injectees) {
-                String s = extra.getClass().getName();
+            for (Object injectee : injectees) {
+                String s = injectee.getClass().getName();
                 if (s.indexOf("ByMockito") > -1) {
-                    Class<?> parent = extra.getClass().getSuperclass();
+                    Class<?> parent = injectee.getClass().getSuperclass();
                     if (parent == Object.class) {
-                        parent = extra.getClass().getInterfaces()[0];
+                        parent = injectee.getClass().getInterfaces()[0];
                     }
-                    mocks.addComponent(parent, extra);
+                    mocks.addComponent(parent, injectee);
                 } else {
-                    mocks.addComponent(extra);
+                    mocks.addComponent(injectee);
                 }
             }
             return mocks.addComponent(type).getComponent(type);
         }
     }
 
-    public static class InjecteesToDo<T> extends MakeToDo<T> {
+    public static class InjecteesOrJournalOrMakeNext<T> extends JournalOrMakeNext<T> {
 
-        public InjecteesToDo(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
+        private InjecteesOrJournalOrMakeNext(Class<T> type, MutablePicoContainer mocks, Object[] injectees) {
             super(type, mocks, injectees);
         }
 
-        public InjecteesToDo(Class<T> type) {
+        private InjecteesOrJournalOrMakeNext(Class<T> type) {
             super(type, makePicoContainer(DEFAULT_INJECTION_TYPES), new Object[0]);
         }
 
-        public MakeToDo<T> withInjectees(Object... injectees) {
-            return new MakeToDo<T>(type, mocks, injectees);
+        public JournalOrMakeNext<T> withInjectees(Object... injectees) {
+            return new JournalOrMakeNext<T>(type, mocks, injectees);
         }
 
     }
 
-    public static class ContainerToDo<T> extends InjecteesToDo<T> {
-        public ContainerToDo(Class<T> type) {
+    public static class ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext<T> extends InjecteesOrJournalOrMakeNext<T> {
+
+        private ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext(Class<T> type) {
             super(type);
         }
 
-        public InjecteesToDo<T> using(MutablePicoContainer mocks) {
-            return new InjecteesToDo<T>(type, mocks, new Object[0]);
+        public InjecteesOrJournalOrMakeNext<T> using(MutablePicoContainer mocks) {
+            return new InjecteesOrJournalOrMakeNext<T>(type, mocks, new Object[0]);
         }
 
-        public InjecteesToDo<T> withInjectionTypes(InjectionType... injectionFactories) {
+        public InjecteesOrJournalOrMakeNext<T> withInjectionTypes(InjectionType... injectionFactories) {
             return using(makePicoContainer(injectionFactories));
         }
 
-        public InjecteesToDo<T> withSetters() {
+        public InjecteesOrJournalOrMakeNext<T> withSetters() {
             List<InjectionType> injectionTypes = new ArrayList<InjectionType>(Arrays.asList(DEFAULT_INJECTION_TYPES));
             injectionTypes.add(SDI());
-            return using(makePicoContainer(injectionTypes.toArray(new InjectionType[injectionTypes.size()])));
+            return withInjectionTypes(injectionTypes.toArray(new InjectionType[injectionTypes.size()]));
         }
     }
 
@@ -174,7 +172,6 @@ public class Mockpico {
         return new DefaultPicoContainer(parent, new NullLifecycleStrategy(), new NullComponentMonitor(),
                 new Caching().wrap(new CompositeInjection(injectionFactories)));
     }
-
 
     private static Class<? extends Annotation> getInjectionAnnotation(String className) {
         try {
