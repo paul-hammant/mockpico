@@ -10,6 +10,12 @@ Here is a simple example. Say FooController has a dozen dependencies injected in
 
     FooController fc = mockDepsFor(FooController.class).withInjectees(a, b, c, d).make();
 
+The above would be instead of this below (or worse)
+
+    FooController fc = new FooController(a, b, null, null, null, null, null, null);
+    fc.setC(c);
+    fc.d = d; // assuming the field 'd' is not private
+
 The injectees above could be real components, or Mockito mocks (your choice).  They can be specified in any order as PicoContainer will just work the right order.  Dependencies not specified will be mocked automatically.
 
 Understands a few Dependency Injection (DI) technologies
