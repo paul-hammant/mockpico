@@ -8,7 +8,7 @@ A Simple Example
 
 Here is a simple example. Say FooController has a dozen dependencies injected in through the constructor, setters and appropriately annotated fields, but you just don’t care about most of the deps, the Mockpico can automatically inject mocks for them:
 
-> FooController fc = mockDepsFor(FooController.class).withInjectees(a, b, c, d).make();
+    FooController fc = mockDepsFor(FooController.class).withInjectees(a, b, c, d).make();
 
 The injectees above could be real components, or Mockito mocks (your choice).  They can be specified in any order as PicoContainer will just work the right order.  Dependencies not specified will be mocked automatically.
 
@@ -37,22 +37,22 @@ Other Mockpico functionality
 
 Showing what injectees were used or mocked for debugging purposes:
 
-> Journal journal = new Journal();
->
-> FooController fc = mockDepsFor(FooController.class)
->       .journalTo(journal)
->       .make();
->
-> System.out.println(journal);
+    Journal journal = new Journal();
+
+    FooController fc = mockDepsFor(FooController.class)
+       .journalTo(journal)
+       .make();
+
+    System.out.println(journal);
 
 Adding in old-fashioned (unannotated) setter injection:
          
-> FooController fc = mockDepsFor(FooController.class)
->       .withSetters()
->       .make();
+    FooController fc = mockDepsFor(FooController.class)
+       .withSetters()
+       .make();
 
 Providing your own container for injectees (real and mock ones) :
 
-> FooController fc = mockDepsFor(FooController.class)
->       .using(makePicoContainer(CDI(), new AnnotatedMethodInjection(false, YourCustomInjectAnnotation.class)))
->       .make();
+    FooController fc = mockDepsFor(FooController.class)
+       .using(makePicoContainer(CDI(), new AnnotatedMethodInjection(false, YourCustomInjectAnnotation.class)))
+       .make();
