@@ -21,7 +21,7 @@ Here is a full test case showing a number of permutations of Mockpico in use:
 [MockpicoTestCase.java](mockpico/blob/master/src/test/java/com/thoughtworks/mockpico/MockpicoTestCase.java).
 
 Do you have too many injected dependencies?
-------------------------------------------
+-------------------------------------------
 
 A word of warning, to folks embracing DI more than decomposition:
 
@@ -31,3 +31,28 @@ Where Mockpico facilitates good work
 ------------------------------------
 
 If your ripple through your testbase getting rid of the use of controller's constructors, then you are able to change the types of injection easily. This is because the change only affects a single controller at a time, as the tests no longer directly manipulate constructors, setters of injectable fields.
+
+Other Mockpico functionality
+----------------------------
+
+Showing what injectees were used or mocked for debugging purposes:
+
+> Journal journal = new Journal();
+>
+> FooController fc = mockDepsFor(FooController.class)
+>       .journalTo(journal)
+>       .make();
+>
+> System.out.println(journal);
+
+Adding in old-fashioned (unannotated) setter injection:
+         
+> FooController fc = mockDepsFor(FooController.class)
+>       .withSetters()
+>       .make();
+
+Providing your own container for injectees (real and mock ones) :
+
+> FooController fc = mockDepsFor(FooController.class)
+>       .using(makePicoContainer(CDI(), new AnnotatedMethodInjection(false, YourCustomInjectAnnotation.class)))
+>       .make();
