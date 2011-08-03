@@ -21,15 +21,6 @@ package com.thoughtworks.mockpico;
  * THE SOFTWARE.
  */
 
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.exceptions.verification.NoInteractionsWanted;
-import org.picocontainer.MutablePicoContainer;
-import org.picocontainer.injectors.AnnotatedFieldInjection;
-import org.picocontainer.injectors.AnnotatedMethodInjection;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.inject.Inject;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,13 +32,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.exceptions.verification.NoInteractionsWanted;
+import org.picocontainer.MutablePicoContainer;
+import org.picocontainer.injectors.AnnotatedFieldInjection;
+import org.picocontainer.injectors.AnnotatedMethodInjection;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.sun.tools.internal.ws.wsdl.parser.Util.fail;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
 import static com.thoughtworks.mockpico.Mockpico.resetAll;
 import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.picocontainer.injectors.Injectors.CDI;
 import static org.picocontainer.injectors.Injectors.SDI;
@@ -69,6 +71,27 @@ public class MockpicoTestCase {
                 aMadeWith(mockCandB()),
                 setterCalledWith(mockD())
         ).to(a);
+    }
+
+    @Test
+    public void canUseCustomMockMaker() {
+
+        final StringBuilder sb = new StringBuilder();
+
+        Mockpico.Mocker mocker = new Mockpico.Mocker() {
+            public <T> T mock(Class<T> classToMock) {
+                sb.append("Mocking:" + classToMock.getSimpleName() + "\n");
+                return Mockito.mock(classToMock);
+            }
+        };
+        mockDepsFor(A.class)
+                .using(makePicoContainer(CDI(), SDI()))
+                .make(mocker);
+
+        assertThat(sb.toString(), is(equalTo(
+                "Mocking:C\n" +
+                "Mocking:B\n" +
+                "Mocking:D\n")));
     }
 
     @Test

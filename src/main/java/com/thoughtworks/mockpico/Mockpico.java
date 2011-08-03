@@ -21,6 +21,16 @@
  */
 package com.thoughtworks.mockpico;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import org.mockito.Mockito;
 import org.picocontainer.ComponentAdapter;
 import org.picocontainer.DefaultPicoContainer;
@@ -36,15 +46,6 @@ import org.picocontainer.injectors.AnnotatedMethodInjection;
 import org.picocontainer.injectors.CompositeInjection;
 import org.picocontainer.lifecycle.NullLifecycleStrategy;
 import org.picocontainer.monitors.NullComponentMonitor;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 
 import static org.picocontainer.injectors.Injectors.CDI;
 import static org.picocontainer.injectors.Injectors.SDI;
@@ -101,8 +102,16 @@ public class Mockpico {
             return this;
         }
 
-        public T make() {
-            mocks.changeMonitor(new MockpicoComponentMonitor(journal));
+         public T make() {
+            return make(new Mocker() {
+                public <T> T mock(Class<T> classToMock) {
+                    return Mockito.mock(classToMock, Mockito.RETURNS_DEEP_STUBS);
+                }
+            });
+        }
+
+        public T make(Mocker mocker) {
+            mocks.changeMonitor(new MockpicoComponentMonitor(journal, mocker));
             for (Object injectee : injectees) {
                 String s = injectee.getClass().getName();
                 if (s.indexOf("ByMockito") > -1) {
@@ -117,6 +126,10 @@ public class Mockpico {
             }
             return mocks.addComponent(type).getComponent(type);
         }
+    }
+
+    public static interface Mocker {
+        <T> T mock(java.lang.Class<T> classToMock);
     }
 
     public static class InjecteesOrJournalOrMakeNext<T> extends JournalOrMakeNext<T> {
@@ -185,9 +198,11 @@ public class Mockpico {
     private static class MockpicoComponentMonitor extends NullComponentMonitor {
 
         private final Journal journal;
+        private final Mocker mocker;
 
-        private MockpicoComponentMonitor(Journal journal) {
+        private MockpicoComponentMonitor(Journal journal, Mocker mocker) {
             this.journal = journal;
+            this.mocker = mocker;
         }
 
         @Override
@@ -223,7 +238,7 @@ public class Mockpico {
 
         @Override
         public Object noComponentFound(MutablePicoContainer pico, Object classToMock) {
-            if (classToMock instanceof Class) {
+            if (classToMock instanceof Type) {
                 if (classToMock == Integer.class) {
                     return 0;
                 } else if (classToMock == Long.class) {
@@ -242,10 +257,12 @@ public class Mockpico {
                     return (char) 0;
                 } else if (classToMock == String.class) {
                     return "";
-                } else {
-                    Object mocked = Mockito.mock((Class) classToMock);
+                } else if (classToMock instanceof Class) {
+                    Object mocked = mocker.mock((Class) classToMock);
                     pico.addComponent(classToMock, mocked);
                     return mocked;
+                } else {
+                    return null;
                 }
             }
             return null;
@@ -254,3 +271,4 @@ public class Mockpico {
 
     }
 }
+
