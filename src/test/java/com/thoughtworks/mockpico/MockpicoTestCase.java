@@ -24,6 +24,7 @@ package com.thoughtworks.mockpico;
 import com.picocontainer.MutablePicoContainer;
 import com.picocontainer.injectors.AnnotatedFieldInjection;
 import com.picocontainer.injectors.AnnotatedMethodInjection;
+import com.picocontainer.injectors.NamedMethodInjection;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.exceptions.verification.NoInteractionsWanted;
@@ -177,7 +178,7 @@ public class MockpicoTestCase {
         ).to(a);
 
 
-        String journalString = removeHashCodesSoThatStringMatchingCanWork(journal);
+        String journalString = replaceNumbericObjectIDsSoThatStringComparisonCanWork(journal);
 
         assertEquals("Constructor being injected:\n" +
                 "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: <HC#0>\n" +
@@ -228,7 +229,7 @@ public class MockpicoTestCase {
                 customAnnotatedMethodCalledWith(aBunchOfPrimitives())
         ).to(a);
 
-        String journalString = removeHashCodesSoThatStringMatchingCanWork(journal);
+        String journalString = replaceNumbericObjectIDsSoThatStringComparisonCanWork(journal);
 
         assertThat(journalString, equalTo("Constructor being injected:\n" +
                 "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: <HC#0>\n" +
@@ -249,7 +250,30 @@ public class MockpicoTestCase {
                 "  arg[10] type:class java.lang.Long, with: 0\n"));
     }
 
-    private String removeHashCodesSoThatStringMatchingCanWork(Journal journal) {
+    @Test
+    public void canMockGenericThing() {
+
+        Journal journal = new Journal();
+        A a = mockDepsFor(A.class)
+                .using(makePicoContainer(CDI(), new NamedMethodInjection("shove")))
+                .journalTo(journal)
+                .make();
+
+        assertTheseHappenedInOrder(
+                aMadeWith(mockCandB()),
+                shoveItCalledWithEmptyListOfDs()
+        ).to(a);
+
+        String journalString = replaceNumbericObjectIDsSoThatStringComparisonCanWork(journal);
+
+        assertThat(journalString, equalTo("Constructor being injected:\n" +
+                "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: <HC#0>\n" +
+                "  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: <HC#1>\n" +
+                "Method 'shoveIt' being injected: \n" +
+                "  arg[0] type:interface java.util.List, with: Mock for List, hashCode: <HC#2>\n"));
+    }
+
+    private String replaceNumbericObjectIDsSoThatStringComparisonCanWork(Journal journal) {
         Pattern eightOrMoreDigits = Pattern.compile("\\d{8,}");
         List<String> hashes = new ArrayList<String>();
         Matcher matcher = eightOrMoreDigits.matcher(journal.toString());
@@ -325,10 +349,18 @@ public class MockpicoTestCase {
             if (b1 != null) {
                 s = s + ",b1=" + prt(b1);
             }
-            if (b1 != null) {
+            if (b2 != null) {
                 s = s + ",b2=" + prt(b2);
             }
             return s;
+        }
+
+        private String prt(List<D> objs) {
+            String p = "*empty*";
+            for (D d1 : objs) {
+                p = p + ", " + prt(d1);
+            }
+            return "Ds[" + p.replace("*empty*,", "*empty*") + "]";
         }
 
         private String prt(Object obj) {
@@ -366,6 +398,10 @@ public class MockpicoTestCase {
 
         public void setIt(D d) {
             sb.append(",setIt(" + prt(d) + ")");
+        }
+
+        public void shoveIt(List<D> ds) {
+            sb.append(",shoveIt(" + prt(ds) + ")");
         }
 
         @Inject
@@ -465,6 +501,10 @@ public class MockpicoTestCase {
 
     private String atInjectMethodCalledWith(String with) {
         return ",inj3ct("+with+")";
+    }
+
+    private String shoveItCalledWithEmptyListOfDs() {
+        return ",shoveIt(Ds[*empty*])";
     }
 
     private String aMadeWith(String with) {
