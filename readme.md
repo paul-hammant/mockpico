@@ -31,7 +31,7 @@ Do you have too many injected dependencies?
 
 A word of warning, to folks embracing DI more than decomposition:
 
-![alt injection diagram](mockpico/raw/master/src/graffle/injection-diag.png "Collaborators Are Better")
+![an injection diagram](http://paulhammant.com/images/injection-diag.png "Collaborators Are Better")
 
 Where Mockpico facilitates good work
 ------------------------------------
