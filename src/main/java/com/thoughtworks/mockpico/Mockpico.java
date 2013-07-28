@@ -57,9 +57,11 @@ public class Mockpico {
     public static final Class<? extends Annotation> GUICE_ATINJECT = getInjectionAnnotation("com.google.Inject");
     public static final Class<? extends Annotation> SPRING_AUTOWIRED = getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired");
 
-    private static final InjectionType[] DEFAULT_INJECTION_TYPES = new InjectionType[] {CDI(),
+    private static final InjectionType[] DEFAULT_INJECTION_TYPES = new InjectionType[] {
+            CDI(),
             new AnnotatedFieldInjection(Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT),
-            new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT)};
+            new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT)
+    };
 
     public static <T> ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext<T> mockDepsFor(Class<T> type) {
         return new ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext<T>(type);
@@ -104,11 +106,7 @@ public class Mockpico {
         }
 
          public T make() {
-            return make(new Mocker() {
-                public <T> T mock(Class<T> classToMock) {
-                    return Mockito.mock(classToMock, Mockito.RETURNS_DEEP_STUBS);
-                }
-            });
+            return make(new ClassMocker());
         }
 
         public T make(Mocker mocker) {
@@ -127,10 +125,17 @@ public class Mockpico {
             }
             return mocks.addComponent(type).getComponent(type);
         }
+
     }
 
     public static interface Mocker {
         <T> T mock(java.lang.Class<T> classToMock);
+    }
+
+    private static class ClassMocker implements Mocker {
+        public <T> T mock(Class<T> classToMock) {
+            return Mockito.mock(classToMock, Mockito.RETURNS_DEEP_STUBS);
+        }
     }
 
     public static class InjecteesOrJournalOrMakeNext<T> extends JournalOrMakeNext<T> {
