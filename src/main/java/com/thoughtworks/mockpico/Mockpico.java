@@ -21,6 +21,22 @@
  */
 package com.thoughtworks.mockpico;
 
+import com.picocontainer.ComponentAdapter;
+import com.picocontainer.DefaultPicoContainer;
+import com.picocontainer.InjectionType;
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.PicoContainer;
+import com.picocontainer.adapters.InstanceAdapter;
+import com.picocontainer.annotations.Inject;
+import com.picocontainer.behaviors.Caching;
+import com.picocontainer.containers.EmptyPicoContainer;
+import com.picocontainer.injectors.AnnotatedFieldInjection;
+import com.picocontainer.injectors.AnnotatedMethodInjection;
+import com.picocontainer.injectors.CompositeInjection;
+import com.picocontainer.lifecycle.NullLifecycleStrategy;
+import com.picocontainer.monitors.NullComponentMonitor;
+import org.mockito.Mockito;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
@@ -31,24 +47,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import org.mockito.Mockito;
-import org.picocontainer.ComponentAdapter;
-import org.picocontainer.DefaultPicoContainer;
-import org.picocontainer.InjectionType;
-import org.picocontainer.MutablePicoContainer;
-import org.picocontainer.PicoContainer;
-import org.picocontainer.adapters.InstanceAdapter;
-import org.picocontainer.annotations.Inject;
-import org.picocontainer.behaviors.Caching;
-import org.picocontainer.containers.EmptyPicoContainer;
-import org.picocontainer.injectors.AnnotatedFieldInjection;
-import org.picocontainer.injectors.AnnotatedMethodInjection;
-import org.picocontainer.injectors.CompositeInjection;
-import org.picocontainer.lifecycle.NullLifecycleStrategy;
-import org.picocontainer.monitors.NullComponentMonitor;
 
-import static org.picocontainer.injectors.Injectors.CDI;
-import static org.picocontainer.injectors.Injectors.SDI;
+import static com.picocontainer.injectors.Injectors.CDI;
+import static com.picocontainer.injectors.Injectors.SDI;
 
 public class Mockpico {
 
@@ -191,7 +192,7 @@ public class Mockpico {
             return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass(className);
         } catch (ClassNotFoundException e) {
             // JSR330 or Spring not in classpath.  No matter carry on without it with a kludge:
-            return org.picocontainer.annotations.Inject.class;
+            return com.picocontainer.annotations.Inject.class;
         }
     }
 
@@ -257,6 +258,10 @@ public class Mockpico {
                     return (char) 0;
                 } else if (classToMock == String.class) {
                     return "";
+                } else if (classToMock instanceof ParameterizedType) {
+                    Object mocked = mocker.mock((Class<?>) ((ParameterizedType) classToMock).getRawType());
+                    pico.addComponent(classToMock, mocked);
+                    return mocked;
                 } else if (classToMock instanceof Class) {
                     Object mocked = mocker.mock((Class) classToMock);
                     pico.addComponent(classToMock, mocked);

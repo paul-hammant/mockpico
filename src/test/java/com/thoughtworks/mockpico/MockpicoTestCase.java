@@ -21,6 +21,15 @@ package com.thoughtworks.mockpico;
  * THE SOFTWARE.
  */
 
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.injectors.AnnotatedFieldInjection;
+import com.picocontainer.injectors.AnnotatedMethodInjection;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.exceptions.verification.NoInteractionsWanted;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.inject.Inject;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -32,15 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.inject.Inject;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.exceptions.verification.NoInteractionsWanted;
-import org.picocontainer.MutablePicoContainer;
-import org.picocontainer.injectors.AnnotatedFieldInjection;
-import org.picocontainer.injectors.AnnotatedMethodInjection;
-import org.springframework.beans.factory.annotation.Autowired;
 
+import static com.picocontainer.injectors.Injectors.CDI;
+import static com.picocontainer.injectors.Injectors.SDI;
 import static com.sun.tools.internal.ws.wsdl.parser.Util.fail;
 import static com.thoughtworks.mockpico.Mockpico.makePicoContainer;
 import static com.thoughtworks.mockpico.Mockpico.mockDepsFor;
@@ -51,8 +54,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.picocontainer.injectors.Injectors.CDI;
-import static org.picocontainer.injectors.Injectors.SDI;
 
 public class MockpicoTestCase {
 
@@ -223,14 +224,17 @@ public class MockpicoTestCase {
 
         assertTheseHappenedInOrder(
                 aMadeWith(mockCandB()),
+                atInjectMethodCalledWith(mockB()),
                 customAnnotatedMethodCalledWith(aBunchOfPrimitives())
         ).to(a);
 
         String journalString = removeHashCodesSoThatStringMatchingCanWork(journal);
 
-        assertEquals("Constructor being injected:\n" +
+        assertThat(journalString, equalTo("Constructor being injected:\n" +
                 "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$C, with: Mock for C, hashCode: <HC#0>\n" +
                 "  arg[1] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: <HC#1>\n" +
+                "Method 'inj3ct' being injected: \n" +
+                "  arg[0] type:class com.thoughtworks.mockpico.MockpicoTestCase$B, with: Mock for B, hashCode: <HC#1>\n" +
                 "Method 'foobar' being injected: \n" +
                 "  arg[0] type:class java.lang.String, with: \n" +
                 "  arg[1] type:int, with: 0\n" +
@@ -240,15 +244,15 @@ public class MockpicoTestCase {
                 "  arg[5] type:float, with: 0.0\n" +
                 "  arg[6] type:byte, with: 0\n" +
                 "  arg[7] type:short, with: 0\n" +
-                "  arg[8] type:class java.math.BigInteger, with: Mock for BigInteger, hashCode: <HC#2>\n" +
+                "  arg[8] type:class java.math.BigInteger, with: Mock for BigInteger, hashCode: <HC#3>\n" +
                 "  arg[9] type:char, with: \u0000\n" +
-                "  arg[10] type:class java.lang.Long, with: 0\n", journalString);
+                "  arg[10] type:class java.lang.Long, with: 0\n"));
     }
 
     private String removeHashCodesSoThatStringMatchingCanWork(Journal journal) {
-        Pattern nineOrMoreDigits = Pattern.compile("\\d{9,}");
+        Pattern eightOrMoreDigits = Pattern.compile("\\d{8,}");
         List<String> hashes = new ArrayList<String>();
-        Matcher matcher = nineOrMoreDigits.matcher(journal.toString());
+        Matcher matcher = eightOrMoreDigits.matcher(journal.toString());
         while (matcher.find()) {
             hashes.add(matcher.group());
         }
@@ -290,9 +294,9 @@ public class MockpicoTestCase {
     }
 
     public static class NeedsList {
-        private List<Object> list;
+        private List list;
 
-        public NeedsList(List<Object> list) {
+        public NeedsList(List list) {
             this.list = list;
         }
 
