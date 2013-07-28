@@ -27,7 +27,6 @@ import com.picocontainer.InjectionType;
 import com.picocontainer.MutablePicoContainer;
 import com.picocontainer.PicoContainer;
 import com.picocontainer.adapters.InstanceAdapter;
-import com.picocontainer.annotations.Inject;
 import com.picocontainer.behaviors.Caching;
 import com.picocontainer.containers.EmptyPicoContainer;
 import com.picocontainer.injectors.AnnotatedFieldInjection;
@@ -54,13 +53,13 @@ import static com.picocontainer.injectors.Injectors.SDI;
 public class Mockpico {
 
     public static final Class<? extends Annotation> JSR330_ATINJECT = getInjectionAnnotation("javax.inject.Inject");
-    public static final Class<? extends Annotation> GUICE_ATINJECT = getInjectionAnnotation("com.google.Inject");
+    public static final Class<? extends Annotation> GUICE_ATINJECT = getInjectionAnnotation("com.google.inject.Inject");
     public static final Class<? extends Annotation> SPRING_AUTOWIRED = getInjectionAnnotation("org.springframework.beans.factory.annotation.Autowired");
 
     private static final InjectionType[] DEFAULT_INJECTION_TYPES = new InjectionType[] {
             CDI(),
-            new AnnotatedFieldInjection(Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT),
-            new AnnotatedMethodInjection(false, Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT)
+            new AnnotatedFieldInjection(com.picocontainer.annotations.Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT),
+            new AnnotatedMethodInjection(false, com.picocontainer.annotations.Inject.class, JSR330_ATINJECT, SPRING_AUTOWIRED, GUICE_ATINJECT)
     };
 
     public static <T> ContainerOrInjectionTypesOrInjecteesOrJournalOrMakeNext<T> mockDepsFor(Class<T> type) {
@@ -192,13 +191,16 @@ public class Mockpico {
                 new Caching().wrap(new CompositeInjection(injectionFactories)));
     }
 
-    private static Class<? extends Annotation> getInjectionAnnotation(String className) {
+    protected static Class<? extends Annotation> getInjectionAnnotation(String className) {
         try {
             return (Class<? extends Annotation>) Mockpico.class.getClassLoader().loadClass(className);
         } catch (ClassNotFoundException e) {
-            // JSR330 or Spring not in classpath.  No matter carry on without it with a kludge:
-            return com.picocontainer.annotations.Inject.class;
+            // JSR330 or Spring (etc) not in classpath.  No matter carry on without it with a kludge:
+            return AnnotationNotFound.class;
         }
+    }
+
+    protected @interface AnnotationNotFound {
     }
 
     private static class MockpicoComponentMonitor extends NullComponentMonitor {
@@ -219,12 +221,6 @@ public class Mockpico {
             for (int i = 0; i < injected.length; i++) {
                 journal.append(new Journal.Arg(i, constructor.getParameterTypes()[i], injected[i]));
             }
-        }
-
-        @Override
-        public <T> void instantiationFailed(PicoContainer container, ComponentAdapter<T> componentAdapter,
-                                            Constructor<T> constructor, Exception e) {
-            super.instantiationFailed(container, componentAdapter, constructor, e);    
         }
 
         @Override
@@ -271,8 +267,6 @@ public class Mockpico {
                     Object mocked = mocker.mock((Class) classToMock);
                     pico.addComponent(classToMock, mocked);
                     return mocked;
-                } else {
-                    return null;
                 }
             }
             return null;

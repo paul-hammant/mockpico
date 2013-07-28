@@ -31,6 +31,7 @@ import org.mockito.exceptions.verification.NoInteractionsWanted;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.inject.Inject;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -315,6 +316,12 @@ public class MockpicoTestCase {
         nl.oops();
         resetAll(mocks);
         Mockito.verifyNoMoreInteractions(mocks.getComponent(List.class));
+    }
+
+    @Test
+    public void nonsenseAnnotationDoesntUpsetMockPico() {
+        Class<? extends Annotation> ann = Mockpico.getInjectionAnnotation("foo.Bar");
+        assertThat(ann.getName(), equalTo("com.thoughtworks.mockpico.Mockpico$AnnotationNotFound"));
     }
 
     public static class NeedsList {
