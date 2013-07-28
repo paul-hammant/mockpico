@@ -24,7 +24,7 @@ Understands a few Dependency Injection (DI) technologies
 The setter methods or fields to inject into were annotated with Spring’s @Autowired or @Inject from JSR330, Guice or PicoContainer. The four variables in this case (a, b, c, d) are injected into where the applicable injection-points as declared for FooController. Each of the four could be Mocks made by Mockito, or real or stub implementations as you see fit.
 
 Here is a full test case showing a number of permutations of Mockpico in use:
-[MockpicoTestCase.java](mockpico/blob/master/src/test/java/com/thoughtworks/mockpico/MockpicoTestCase.java).
+[MockpicoTestCase.java](https://github.com/paul-hammant/mockpico/blob/master/src/test/java/com/thoughtworks/mockpico/MockpicoTestCase.java).
 
 Do you have too many injected dependencies?
 -------------------------------------------
